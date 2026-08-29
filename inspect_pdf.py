@@ -18,6 +18,8 @@ async def inspect_pdf(file):
             stream=pdf_bytes,
             filetype="pdf"
         )
+        suspicious_regions = []
+        reasons = []
 
         for page in doc:
 
@@ -58,8 +60,9 @@ async def inspect_pdf(file):
                         # Very small text
                         # -------------------------------------------------
 
-                        if span["size"] < 4.0:
+                        if span["size"] < 2.0:
                             suspicious = True
+                            reasons.append("small_text")
 
                         # -------------------------------------------------
                         # CONDITION 2:
@@ -155,6 +158,7 @@ async def inspect_pdf(file):
                             # Very low contrast
                             if color_difference < 25:
                                 suspicious = True
+                                reasons.append("low_contrast")
 
                         # -------------------------------------------------
                         # CONDITION 3:
@@ -175,15 +179,19 @@ async def inspect_pdf(file):
 
                         if near_border:
                             suspicious = True
+                            reasons.append("near_border")
 
                         # -------------------------------------------------
                         # HIGHLIGHT SUSPICIOUS TEXT
                         # -------------------------------------------------
 
                         if suspicious:
-                            bbox = pymupdf.Rect(
-                                span["bbox"]
-                            )
+                            suspicious_regions.append({
+                                "page": page.number,
+                                "bbox": [x0, y0, x1, y1],
+                                "reasons": reasons
+                            })
+                            bbox = pymupdf.Rect(span["bbox"])
                             page.add_highlight_annot(bbox)
 
         # -------------------------------------------------
@@ -192,10 +200,10 @@ async def inspect_pdf(file):
 
         edited_pdf = doc.tobytes()
         doc.close()
-        return edited_pdf
+        return edited_pdf, suspicious_regions
 
 
-    async def layer_2(edited_pdf: bytes):
+    async def layer_2(edited_pdf: bytes, suspicious_regions):
         prompt = ""
         pdf_base64 = base64.b64encode(edited_pdf).decode("utf-8")
         headers = {
@@ -232,12 +240,15 @@ async def inspect_pdf(file):
             for item in content:
                 if item.get("type") == "text":
                     return item.get("text", "")
-        return ""
+        raise ValueError("Gemini did not return a text response")
 
     # -------------------------
     # INSPECTION PIPELINE
     # -------------------------
 
-    edited_pdf = await layer_1(file)
-    result = await layer_2(edited_pdf)
+    edited_pdf, suspicious_regions = await layer_1(file)
+    result = await layer_2(
+        edited_pdf,
+        suspicious_regions
+    )
     return result
