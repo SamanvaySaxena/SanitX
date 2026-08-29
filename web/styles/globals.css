@@ -1,0 +1,337 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* Tailwind v4 consumes the tokens as theme values. Utilities therefore
+   resolve to the same custom properties the raw CSS uses, so the Act 4
+   ground inversion (§5.4) cascades through Tailwind classes for free. */
+@theme inline {
+  --color-void: var(--bg-void);
+  --color-base: var(--bg-base);
+  --color-raised: var(--bg-raised);
+  --color-overlay: var(--bg-overlay);
+  --color-hair: var(--line-hair);
+  --color-soft: var(--line-soft);
+  --color-strong: var(--line-strong);
+  --color-hi: var(--text-hi);
+  --color-mid: var(--text-mid);
+  --color-low: var(--text-low);
+  --color-paper: var(--paper);
+  --color-paper-ink: var(--paper-ink);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-safe: var(--safe);
+  --color-review: var(--review);
+  --color-blocked: var(--blocked);
+  --color-blocked-text: var(--blocked-text);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "JetBrains Mono", monospace;
+
+  --radius-chip: var(--r-chip);
+  --radius-card: var(--r-card);
+  --radius-panel: var(--r-panel);
+}
+
+@layer base {
+  * { min-width: 0; }
+
+  html {
+    /* No smooth-scroll library (§11) — but native smooth scroll is fine and
+       is what the skip links and in-page anchors ride on. */
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--bg-base);
+    color: var(--text-mid);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    color: var(--text-hi);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  /* §6.4 / §7.3 — visible focus at all times, never outline:none. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: var(--accent-dim);
+    color: var(--text-hi);
+  }
+
+  [hidden] { display: none !important; }
+}
+
+@layer utilities {
+  /* --- The typographic rule that carries the product (§3.3) -------------
+     Anything that came out of the PDF is mono. Anything SanitX says about
+     it is sans. These two classes are the whole enforcement mechanism. */
+  .from-document {
+    font-family: var(--font-mono);
+    font-variant-ligatures: none;
+  }
+  .about-document { font-family: var(--font-sans); }
+
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* --- Blueprint grid (§3.4). Zone A section grounds only; never behind
+         body copy, never in Zone B. */
+  .blueprint {
+    background-image:
+      linear-gradient(var(--line-hair) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-hair) 1px, transparent 1px);
+    background-size: var(--grid-repeat) var(--grid-repeat);
+  }
+  /* Earn the grid: ticks read as a measurement instrument, not wallpaper. */
+  .blueprint-ticks {
+    background-image:
+      linear-gradient(var(--line-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px),
+      linear-gradient(var(--line-hair) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-hair) 1px, transparent 1px);
+    background-size:
+      calc(var(--grid-repeat) * 4) calc(var(--grid-repeat) * 4),
+      calc(var(--grid-repeat) * 4) calc(var(--grid-repeat) * 4),
+      var(--grid-repeat) var(--grid-repeat),
+      var(--grid-repeat) var(--grid-repeat);
+  }
+
+  /* --- The paper. The only bright object on the screen (§3.1). --------- */
+  .paper-surface {
+    background: var(--paper);
+    color: var(--paper-ink);
+    border-radius: var(--r-chip);
+    box-shadow: var(--paper-lift);
+  }
+
+  .rail-hairline { border-color: var(--line-soft); }
+}
+
+/* =========================================================================
+   Reduced motion (§7.2) — the content test.
+   This block only removes MOTION. Every scene's static composition is
+   authored to carry the same argument on its own; the guard in
+   lib/motion/reduced-motion.ts additionally prevents ScrollTrigger
+   instances from ever being created, so the pin cost is never paid.
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Scroll-driven animations must be detached from their timeline, not just
+     shortened — a 1ms duration on a scroll timeline still scrubs. */
+  * { animation-timeline: auto !important; }
+}
+
+/* =========================================================================
+   Skip links (§7.3) — the first two tab stops on every page. Visually
+   hidden until focused, then fully rendered. Note this is the ONLY
+   visually-hidden text on the site, it is navigation rather than narrative,
+   and it is always in the accessibility tree (§7.1).
+   ========================================================================= */
+.skip-link {
+  position: fixed;
+  top: var(--s-2);
+  left: var(--s-2);
+  z-index: 100;
+  transform: translateY(-200%);
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-card);
+  background: var(--bg-overlay);
+  color: var(--text-hi);
+  font-size: var(--ui);
+  text-decoration: none;
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+.skip-link + .skip-link:focus-visible {
+  top: calc(var(--s-2) + 44px);
+}
+
+/* =========================================================================
+   The scroll contract (§4.3) — Zone A only.
+   ========================================================================= */
+
+/* A 2px progress rail driven by animation-timeline: scroll(). Zero JS. It
+   tells the visitor how much story is left, which is the honest way to hold
+   attention. Degrades to an invisible 0-width bar where unsupported. */
+.scroll-rail {
+  position: fixed;
+  inset: 0 auto auto 0;
+  z-index: 60;
+  height: 2px;
+  width: 100%;
+  transform-origin: 0 50%;
+  scale: 0 1;
+  background: var(--accent);
+  pointer-events: none;
+}
+@supports (animation-timeline: scroll()) {
+  .scroll-rail {
+    animation: rail-grow linear;
+    animation-timeline: scroll(root block);
+  }
+}
+@keyframes rail-grow {
+  from { scale: 0 1; }
+  to   { scale: 1 1; }
+}
+
+/* =========================================================================
+   Reveal-on-scroll (§2.1, §5.1) — CSS scroll-driven animation for every
+   reveal on the site. IntersectionObserver is not used for this; GSAP is
+   reserved for the two pinned sequences that CSS genuinely cannot
+   choreograph. Opacity and a 12px translate only (§8).
+   ========================================================================= */
+.reveal {
+  opacity: 1;
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      opacity: 0;
+      animation: reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 20% cover 40%;
+    }
+    /* Staggered cells read their position from --index (§5.2). */
+    .reveal[style*="--index"] {
+      animation-range: entry 10% cover 35%;
+    }
+  }
+}
+@keyframes reveal-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* §4.1 rule 1 — "the section is arriving" is not an animation, it is a paint.
+   120ms opacity, no transform. */
+.paint-in {
+  animation: paint-in var(--t-snap) linear both;
+}
+@keyframes paint-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* =========================================================================
+   Act 0 — the reveal (§5.0)
+   -------------------------------------------------------------------------
+   The whole choreography is CSS. §8: "The hero renders its first frame from
+   static markup and CSS. Nothing in Act 0 waits on JavaScript — if GSAP
+   fails to load, the hero still shows the reveal end state and the headline."
+
+   Timeline, matching the §5.0 table exactly:
+     0ms     seven-word line + paper, already painted by the server
+     600ms   the beam starts its 1400ms linear sweep
+     600..2000ms  the mask edge tracks the beam; payloads illuminate in place
+     2000ms  sweep exits, payloads settle to 85%, brackets and labels land
+     2300ms  headline resolves in over 600ms on Reveal easing
+   ========================================================================= */
+
+.hero-figure .hero-beam,
+.hero-figure .hero-mask-rect,
+.hero-figure .hero-payloads,
+.hero-figure .hero-labels,
+.hero-figure ~ .hero-headline {
+  animation-play-state: paused;
+}
+
+/* Everything below runs only once .hero-armed is present. The server renders
+   it, so the sweep plays on load; the replay control removes and re-adds it. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-armed .hero-mask-rect {
+    animation: hero-sweep 1400ms linear 600ms both;
+  }
+  .hero-armed .hero-beam {
+    animation:
+      hero-sweep 1400ms linear 600ms both,
+      hero-beam-out 200ms linear 1900ms both;
+  }
+  /* Illuminated at full strength, then settling to 85% once the sweep exits. */
+  .hero-armed .hero-payloads {
+    animation: hero-settle var(--t-trans) var(--e-trans) 2000ms both;
+  }
+  .hero-armed .hero-labels {
+    animation: hero-label-in var(--t-trans) var(--e-trans) 2000ms both;
+  }
+  .hero-armed .hero-headline {
+    animation: hero-headline-in var(--t-reveal) var(--e-reveal) 2300ms both;
+  }
+  .hero-armed .hero-beam,
+  .hero-armed .hero-mask-rect,
+  .hero-armed .hero-payloads,
+  .hero-armed .hero-labels,
+  .hero-armed .hero-headline {
+    animation-play-state: running;
+  }
+}
+
+@keyframes hero-sweep {
+  from { transform: translateY(0); }
+  to   { transform: translateY(792px); }
+}
+@keyframes hero-beam-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes hero-settle {
+  from { opacity: 1; }
+  to   { opacity: 0.85; }
+}
+@keyframes hero-label-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes hero-headline-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --- The static fallback (§5.0) ---------------------------------------
+   "the seven-word line, the headline, and the end state — payloads visible,
+   brackets and labels present, no sweep." A reduced-motion visitor loses the
+   sweep and nothing else. This is also the no-JS and no-CSS-animation state,
+   which is why it is expressed as the DEFAULT rather than as an override. */
+.hero-figure .hero-mask-rect {
+  transform: translateY(792px);
+}
+.hero-figure .hero-payloads {
+  opacity: 0.85;
+}
+.hero-figure .hero-beam {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Belt and braces: the beam is removed from the box entirely rather than
+     merely made transparent, so it can never flash on a 1ms duration. */
+  .hero-figure .hero-beam { display: none; }
+}
+
+/* The paper is lifted off the ground by the one shadow the system allows. */
+.hero-page {
+  border-radius: var(--r-chip);
+  box-shadow: var(--paper-lift);
+  overflow: hidden;
+}

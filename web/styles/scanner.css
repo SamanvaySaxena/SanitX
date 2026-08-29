@@ -1,0 +1,979 @@
+/* =========================================================================
+   Zone B — the instrument. FRONTEND_DESIGN.md §6.
+   -------------------------------------------------------------------------
+   ALL of the scanner's CSS lives here. Three rules govern every declaration
+   below and there are no exceptions:
+
+     1. §3.2 / open question #7 — every colour is a token reference. No
+        hardcoded hex, rgb() or hsl() appears in this file. Where a wash is
+        needed it is produced with `opacity` on a token colour rather than by
+        inventing a new one, so the Act 4 ground inversion and a future light
+        theme remain a token swap.
+
+     2. §4.2 — the Zone B ceiling is 120ms (`--t-snap`). Nothing here declares
+        a longer duration, and most state changes use `--t-instant` (80ms).
+        There is no spinner, no pulse loop, and no animated number: §6.2 makes
+        the phase ledger the progress indicator, and §11 bans counters here.
+
+     3. §3.4 — the blueprint grid is Zone A only. "A working tool does not
+        need wallpaper." Elevation is border-first; the ONE shadow in the
+        system (`--paper-lift`, via .paper-surface) lifts the page preview and
+        nothing else, so the document stays the only bright object (§3.1).
+
+   Class prefix `sx-` so nothing collides with the Tailwind utility layer in
+   globals.css. The three global utilities this file relies on and does not
+   redefine are .from-document, .about-document and .tabular (§3.3).
+   ========================================================================= */
+
+/* =========================================================================
+   Shell
+   ========================================================================= */
+
+.sx-route {
+  min-height: 100dvh;
+}
+
+.sx-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--bg-base);
+  color: var(--text-mid);
+  font-family: var(--font-sans);
+  font-size: var(--ui);
+  line-height: 1.5;
+}
+
+/* Act 7 embeds the identical component inline (§5.7), so it must be able to
+   sit in flow rather than own the viewport. */
+.sx-root[data-embedded="true"] {
+  min-height: 0;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-panel);
+  overflow: hidden;
+}
+
+/* =========================================================================
+   Header — §6.1: "SanitX  report.pdf · 12 pages · 2.4 MB   ⌘K  [ New scan ]"
+   ========================================================================= */
+
+.sx-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--bg-base);
+}
+
+.sx-wordmark {
+  color: var(--text-hi);
+  font-size: var(--ui-lg);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+}
+
+.sx-docmeta {
+  color: var(--text-mid);
+}
+
+.sx-header-end {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-left: auto;
+}
+
+.sx-kbd-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  color: var(--text-low);
+  font-size: var(--ui-xs);
+}
+
+/* =========================================================================
+   Panes — §6.1: page preview | findings | verdict.
+   The 1px gutters are the pane borders; `gap: 1px` over a --line-soft ground
+   is border-first elevation with no extra elements (§3.4).
+   ========================================================================= */
+
+.sx-panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 1px;
+  flex: 1;
+  min-height: 0;
+  background: var(--line-soft);
+}
+
+.sx-pane {
+  min-width: 0;
+  padding: var(--s-4);
+  background: var(--bg-base);
+  overflow-y: auto;
+}
+
+@media (max-width: 1100px) {
+  .sx-panes {
+    grid-template-columns: 1fr;
+  }
+  .sx-pane {
+    overflow-y: visible;
+  }
+}
+
+.sx-pane-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+  margin: 0 0 var(--s-3);
+  color: var(--text-low);
+  font-size: var(--ui-xs);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.sx-pane-title-count {
+  color: var(--text-hi);
+}
+
+.sx-section {
+  margin: 0 0 var(--s-6);
+}
+
+.sx-label {
+  display: block;
+  margin: 0 0 var(--s-2);
+  color: var(--text-low);
+  font-size: var(--ui-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.sx-note {
+  margin: var(--s-2) 0 0;
+  color: var(--text-low);
+  font-size: var(--ui-sm);
+}
+
+.sx-strong {
+  color: var(--text-hi);
+}
+
+.sx-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+/* =========================================================================
+   Empty state — §6.5: drop zone, three samples, and the caps stated BEFORE
+   upload rather than inside an error.
+   ========================================================================= */
+
+.sx-empty {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--s-8);
+  align-items: start;
+  padding: var(--s-8) var(--s-6);
+  max-width: 1180px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .sx-empty {
+    grid-template-columns: 1fr;
+    gap: var(--s-6);
+  }
+}
+
+.sx-dropzone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--s-3);
+  /* §7.3 — "drop zone considerably larger" than the 24px target floor. */
+  min-height: 220px;
+  padding: var(--s-8) var(--s-6);
+  border: 1px dashed var(--line-soft);
+  border-radius: var(--r-panel);
+  background: var(--bg-raised);
+  text-align: center;
+  transition:
+    border-color var(--t-instant) linear,
+    background-color var(--t-instant) linear;
+}
+
+.sx-dropzone[data-drag="true"] {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--accent-dim);
+}
+
+/* The real <input type="file"> covers the whole zone, so a click anywhere
+   opens the picker and the control keeps its native keyboard behaviour. The
+   ring is drawn on the parent — never `outline: none` (§6.4). */
+.sx-dropzone:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sx-file-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.sx-dropzone-title {
+  color: var(--text-hi);
+  font-size: var(--ui-lg);
+}
+
+.sx-caps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s-2) var(--s-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-low);
+  font-size: var(--ui-sm);
+}
+
+.sx-samples {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sx-sample {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-card);
+  background: var(--bg-raised);
+  color: var(--text-mid);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--t-instant) linear,
+    background-color var(--t-instant) linear;
+}
+
+.sx-sample:hover {
+  border-color: var(--line-strong);
+}
+
+.sx-sample-name {
+  display: block;
+  color: var(--text-hi);
+}
+
+.sx-sample-meta {
+  display: block;
+  color: var(--text-low);
+  font-size: var(--ui-xs);
+}
+
+/* §6.3 — the refusal names the actual limit. It is a normal region of the
+   page, not a toast: a toast that disappears is a message you cannot re-read
+   while you fix the file. */
+.sx-refusal {
+  margin: var(--s-3) 0 0;
+  padding: var(--s-3);
+  border: 1px solid var(--blocked);
+  border-radius: var(--r-card);
+  background: var(--bg-raised);
+  color: var(--blocked-text);
+  font-size: var(--ui-sm);
+  text-align: left;
+}
+
+/* =========================================================================
+   Page preview — §6.1 pane 1. In demo mode this is a synthetic paper page in
+   the PDF's own 612x792 user space; PageViewer.tsx carries the commented
+   seam where the lazy `import("pdfjs-dist")` goes (§9.1).
+   ========================================================================= */
+
+.sx-page-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.sx-page {
+  position: relative;
+  width: 100%;
+  /* US Letter in points — the coordinate space every bbox is expressed in. */
+  aspect-ratio: 612 / 792;
+}
+
+.sx-page-surface {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  padding: 7.5% 9%;
+}
+
+.sx-paper-head {
+  color: var(--paper-ink);
+  font-size: var(--ui);
+  letter-spacing: 0.06em;
+}
+
+.sx-paper-sub {
+  margin: var(--s-1) 0 var(--s-4);
+  color: var(--paper-ink);
+  font-size: var(--ui-xs);
+  opacity: 0.55;
+}
+
+.sx-paper-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35%;
+}
+
+/* A greeked line. Colour comes from --paper-ink with opacity rather than a
+   new grey, so the paper ground stays a single token decision. */
+.sx-paper-line {
+  height: 1.05%;
+  min-height: 3px;
+  border-radius: 1px;
+  background: var(--paper-ink);
+  opacity: 0.13;
+}
+
+.sx-paper-line[data-weight="rule"] {
+  opacity: 0.28;
+}
+
+.sx-paper-block {
+  margin-top: 4%;
+  border: 1px solid var(--paper-ink);
+  border-radius: 1px;
+  opacity: 0.12;
+  height: 18%;
+}
+
+.sx-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+}
+
+.sx-pager-readout {
+  min-width: 72px;
+  color: var(--text-hi);
+  text-align: center;
+}
+
+/* =========================================================================
+   Bounding boxes — §6.1: selecting a finding pulses its bbox once, 120ms.
+   The overlay is presentational (aria-hidden). The findings list is the one
+   interactive surface for a finding, so a keyboard user is never given the
+   same nine targets twice (§7.3).
+   ========================================================================= */
+
+.sx-bboxes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sx-bbox {
+  position: absolute;
+  border: 1px solid var(--accent);
+  border-radius: 1px;
+  background: var(--accent);
+  opacity: 0.16;
+  transition: opacity var(--t-instant) linear;
+}
+
+.sx-bbox[data-selected="true"] {
+  border-width: 2px;
+  opacity: 0.34;
+}
+
+/* Exactly one pulse, exactly 120ms, exactly the Snap curve (§4.2). */
+.sx-bbox[data-pulse="true"] {
+  animation: sx-bbox-pulse var(--t-snap) var(--e-snap) 1;
+}
+
+@keyframes sx-bbox-pulse {
+  from {
+    opacity: 0.75;
+  }
+  to {
+    opacity: 0.34;
+  }
+}
+
+.sx-bbox-tag {
+  position: absolute;
+  inset: auto auto calc(100% + 2px) 0;
+  padding: 0 3px;
+  border-radius: 1px;
+  background: var(--accent);
+  color: var(--bg-void);
+  font-size: 9px;
+  line-height: 14px;
+  white-space: nowrap;
+}
+
+/* =========================================================================
+   Phase ledger — §6.2. "Do not show a spinner for eight seconds." The ledger
+   IS the progress indicator, and it persists afterwards as the per-phase
+   timing breakdown engineers want.
+   ========================================================================= */
+
+.sx-ledger {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+
+.sx-phase {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--line-hair);
+  border-left: 2px solid transparent;
+}
+
+.sx-phase:last-child {
+  border-bottom: 0;
+}
+
+.sx-phase[data-status="pending"] {
+  color: var(--text-low);
+}
+
+.sx-phase[data-status="running"] {
+  background: var(--accent-dim);
+  border-left-color: var(--accent);
+  color: var(--text-hi);
+}
+
+.sx-phase[data-status="complete"] {
+  color: var(--text-mid);
+}
+
+/* §6.3 fail-closed. The row says PHASE n · FAILED -> REVIEW, in those words. */
+.sx-phase[data-status="failed"] {
+  border-left-color: var(--blocked);
+  color: var(--blocked-text);
+}
+
+.sx-phase-name {
+  min-width: 0;
+}
+
+.sx-phase-readout {
+  display: block;
+  color: var(--text-low);
+  font-size: var(--ui-xs);
+}
+
+.sx-phase[data-status="failed"] .sx-phase-readout {
+  color: var(--blocked-text);
+}
+
+.sx-phase-ms {
+  color: var(--text-low);
+  font-size: var(--ui-xs);
+  white-space: nowrap;
+}
+
+/* =========================================================================
+   Findings list — §7.3: a real <ul>/<li>, one interactive row per finding.
+   ========================================================================= */
+
+.sx-findings {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line-hair);
+}
+
+.sx-finding {
+  border-bottom: 1px solid var(--line-hair);
+}
+
+.sx-finding-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  /* WCAG 2.2 SC 2.5.8 — 32px clears the 24px floor with margin. */
+  min-height: 32px;
+  padding: var(--s-2) var(--s-2);
+  border: 0;
+  border-left: 2px solid transparent;
+  background: transparent;
+  color: var(--text-mid);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--t-instant) linear,
+    border-color var(--t-instant) linear,
+    color var(--t-instant) linear;
+}
+
+.sx-finding-row:hover {
+  background: var(--bg-raised);
+  color: var(--text-hi);
+}
+
+.sx-finding[data-selected="true"] > .sx-finding-row {
+  border-left-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--text-hi);
+}
+
+.sx-finding-page {
+  color: var(--text-low);
+}
+
+.sx-finding-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Severity: colour + glyph + word, never colour alone (§3.2 law 2). */
+.sx-sev {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-size: var(--ui-xs);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.sx-sev[data-tone="blocked"] {
+  color: var(--blocked-text);
+}
+.sx-sev[data-tone="review"] {
+  color: var(--review);
+}
+.sx-sev[data-tone="safe"] {
+  color: var(--safe);
+}
+
+.sx-finding-score {
+  color: var(--text-hi);
+}
+
+/* --- Expanded evidence (§6.1) --------------------------------------------
+   reason codes, the offending span in mono, coordinates, MITRE where mapped. */
+
+.sx-evidence {
+  padding: var(--s-3) var(--s-3) var(--s-3) calc(30px + var(--s-3));
+  border-left: 2px solid var(--accent);
+  background: var(--bg-raised);
+}
+
+.sx-evidence-group {
+  margin: 0 0 var(--s-3);
+}
+
+.sx-evidence-group:last-child {
+  margin-bottom: 0;
+}
+
+.sx-evidence-key {
+  display: block;
+  margin: 0 0 var(--s-1);
+  color: var(--text-low);
+  font-size: var(--ui-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* The offending span, verbatim from the document — therefore mono (§3.3). */
+.sx-span {
+  display: block;
+  margin: 0;
+  padding: var(--s-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-chip);
+  background: var(--bg-void);
+  color: var(--text-hi);
+  font-size: var(--ui-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.sx-coords {
+  color: var(--text-mid);
+  font-size: var(--ui-sm);
+}
+
+.sx-detail {
+  margin: 0;
+  color: var(--text-mid);
+  font-size: var(--ui-sm);
+}
+
+.sx-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+}
+
+/* =========================================================================
+   Verdict panel — §6.1 pane 3, §6.5, §3.6.
+   "Flat, specific, evidence-first. The finding is dramatic enough."
+   ========================================================================= */
+
+.sx-verdict-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+  margin-bottom: var(--s-3);
+}
+
+.sx-r {
+  color: var(--text-hi);
+  font-size: var(--ui-lg);
+}
+
+.sx-components {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  gap: var(--s-2) var(--s-3);
+  align-items: baseline;
+}
+
+.sx-components dt {
+  color: var(--text-hi);
+}
+
+.sx-components dd {
+  margin: 0;
+  color: var(--text-hi);
+  text-align: right;
+}
+
+.sx-component-name {
+  color: var(--text-mid);
+}
+
+.sx-weights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-2);
+}
+
+.sx-weight label {
+  display: block;
+  margin-bottom: var(--s-1);
+  color: var(--text-low);
+  font-size: var(--ui-xs);
+}
+
+/* §6.3 — weights clamp to [0,1] at the input level rather than being
+   validated after the fact. min/max/step are half of that; clampWeight() in
+   the change handler is the other half. */
+.sx-weight input {
+  width: 100%;
+  min-height: 28px;
+  padding: 0 var(--s-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-card);
+  background: var(--bg-void);
+  color: var(--text-hi);
+  font-family: var(--font-mono);
+  font-size: var(--ui-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.sx-select {
+  min-height: 32px;
+  padding: 0 var(--s-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-card);
+  background: var(--bg-raised);
+  color: var(--text-hi);
+  font: inherit;
+}
+
+.sx-checks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  columns: 2;
+  column-gap: var(--s-4);
+  color: var(--text-mid);
+  font-size: var(--ui-sm);
+}
+
+.sx-checks li {
+  break-inside: avoid;
+  padding-left: var(--s-3);
+  text-indent: calc(-1 * var(--s-3));
+}
+
+@media (max-width: 1400px) {
+  .sx-checks {
+    columns: 1;
+  }
+}
+
+/* The fail-closed statement. §6.3: "the verdict panel states explicitly that
+   the document was NOT cleared. Never a generic red toast." */
+.sx-failclosed {
+  margin: 0 0 var(--s-3);
+  padding: var(--s-3);
+  border: 1px solid var(--blocked);
+  border-radius: var(--r-card);
+  background: var(--bg-raised);
+  color: var(--blocked-text);
+  font-size: var(--ui-sm);
+}
+
+.sx-exports {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* §6.3 "Disable, don't validate" — the reason travels with the disabled
+   control instead of arriving as an error after the click. */
+.sx-tip {
+  position: relative;
+  display: inline-flex;
+}
+
+.sx-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  width: max-content;
+  max-width: 240px;
+  padding: var(--s-1) var(--s-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-chip);
+  background: var(--bg-overlay);
+  color: var(--text-mid);
+  font-size: var(--ui-xs);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-instant) linear;
+}
+
+.sx-tip:hover::after,
+.sx-tip:focus-within::after {
+  opacity: 1;
+}
+
+.sx-json {
+  margin: var(--s-3) 0 0;
+  padding: var(--s-3);
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-card);
+  background: var(--bg-void);
+  color: var(--text-mid);
+  font-size: var(--ui-xs);
+  white-space: pre;
+}
+
+/* =========================================================================
+   Status line — §7.3: selection announced via a polite live region, and the
+   finding count announced on scan completion.
+
+   It is rendered VISIBLY rather than screen-reader-only. §7.1 treats
+   visually-hidden narrative text as a blocking defect on this product of all
+   products, and a status line is content, not navigation.
+   ========================================================================= */
+
+.sx-status {
+  padding: var(--s-2) var(--s-4);
+  border-top: 1px solid var(--line-soft);
+  background: var(--bg-base);
+  color: var(--text-low);
+  font-size: var(--ui-sm);
+}
+
+/* §10.2 — demo mode is labelled visibly. A security tool that silently shows
+   fabricated verdicts is not a mock, it is a misrepresentation. */
+.sx-demo-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: 2px var(--s-2);
+  border: 1px solid var(--review);
+  border-radius: var(--r-chip);
+  color: var(--review);
+  font-size: var(--ui-xs);
+  letter-spacing: 0.08em;
+}
+
+/* =========================================================================
+   Command palette (⌘K) and the shortcut sheet (?) — §6.4.
+   ========================================================================= */
+
+.sx-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 12vh var(--s-4) var(--s-4);
+}
+
+.sx-scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-void);
+  opacity: 0.72;
+}
+
+.sx-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-panel);
+  background: var(--bg-overlay);
+  color: var(--text-mid);
+  overflow: hidden;
+}
+
+.sx-dialog-title {
+  margin: 0;
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--text-hi);
+  font-size: var(--ui-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.sx-palette-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  background: transparent;
+  color: var(--text-hi);
+  font: inherit;
+  font-size: var(--ui-lg);
+}
+
+.sx-palette-input::placeholder {
+  color: var(--text-low);
+}
+
+.sx-options {
+  margin: 0;
+  padding: var(--s-1) 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.sx-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  min-height: 32px;
+  padding: var(--s-2) var(--s-4);
+  border-left: 2px solid transparent;
+  color: var(--text-mid);
+  cursor: pointer;
+}
+
+.sx-option[aria-selected="true"] {
+  border-left-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--text-hi);
+}
+
+.sx-option[aria-disabled="true"] {
+  color: var(--text-low);
+  cursor: not-allowed;
+}
+
+.sx-option-hint {
+  color: var(--text-low);
+  font-size: var(--ui-xs);
+  white-space: nowrap;
+}
+
+.sx-empty-options {
+  padding: var(--s-4);
+  color: var(--text-low);
+}
+
+.sx-shortcuts {
+  margin: 0;
+  padding: var(--s-2) var(--s-4) var(--s-4);
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-2) var(--s-4);
+  align-items: baseline;
+}
+
+.sx-shortcuts dt {
+  white-space: nowrap;
+}
+
+.sx-shortcuts dd {
+  margin: 0;
+  color: var(--text-mid);
+}
+
+/* =========================================================================
+   Reduced motion (§7.2). Nothing in Zone B carries content in motion — the
+   bbox pulse is a locator, and the ledger's meaning is in its text — so
+   removing motion here loses no argument at all.
+   ========================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .sx-bbox[data-pulse="true"] {
+    animation: none;
+  }
+}

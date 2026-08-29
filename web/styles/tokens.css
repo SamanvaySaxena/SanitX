@@ -1,0 +1,126 @@
+/* =========================================================================
+   SanitX design tokens — FRONTEND_DESIGN.md §3
+   -------------------------------------------------------------------------
+   Every colour is a SEMANTIC ROLE. No hardcoded hex may appear outside this
+   file. That is open question #7's recommendation: a one-section ground
+   inversion (§5.4) and a future full light theme then cost the same — a
+   token swap — instead of a rewrite.
+
+   Contrast ratios in the comments are machine-verified by
+   test/tokens.contrast.test.ts, which is the CI linter §3.2 asks for.
+   ========================================================================= */
+
+:root {
+  color-scheme: dark;
+
+  /* --- Ground — deep charcoal, never pure #000 ------------------------- */
+  --bg-void:      #07090D;   /* page ground, deepest recess     */
+  --bg-base:      #0B0F17;   /* default surface                 */
+  --bg-raised:    #121826;   /* cards, panels                   */
+  --bg-overlay:   #171E2E;   /* popovers, command palette       */
+
+  /* --- Structure ------------------------------------------------------- */
+  --line-hair:    rgba(255,255,255,0.06);  /* the blueprint grid */
+  --line-soft:    rgba(255,255,255,0.10);  /* card borders       */
+  --line-strong:  rgba(255,255,255,0.18);  /* focused, active    */
+
+  /* --- Text ------------------------------------------------------------ */
+  --text-hi:      #F2F5F9;   /* 17.5:1 on base — AAA */
+  --text-mid:     #A3AEC2;   /*  8.6:1 on base — AAA */
+  --text-low:     #7C8798;   /*  5.3:1 on base — AA, body size and above only */
+
+  /* --- The document — warm, never #FFFFFF ------------------------------ */
+  --paper:        #FAFAF7;
+  --paper-ink:    #14171C;
+  --paper-edge:   rgba(0,0,0,0.45);
+
+  /* --- Single accent — the scan beam, and interactive state ------------ */
+  --accent:       #4D8DFF;                 /* 6.0:1 on base — AA */
+  --accent-dim:   rgba(77,141,255,0.14);
+
+  /* --- Verdict — semantic, three states, never used decoratively ------- */
+  --safe:         #3FB68B;   /* 7.6:1 */
+  --review:       #E0A030;   /* 8.4:1 */
+  --blocked:      #E5484D;   /* 4.9:1 — thin; see --blocked-text */
+  --blocked-text: #FF7B7F;   /* 7.7:1 — small text only */
+
+  /* --- Elevation. Border-first; shadow lifts the paper and nothing else. */
+  --paper-lift:
+    0 1px 2px rgba(0,0,0,.4),
+    0 8px 24px -4px rgba(0,0,0,.5),
+    0 24px 64px -12px rgba(0,0,0,.4);
+
+  /* --- Radii. Documents have corners, not pills. ----------------------- */
+  --r-chip:  2px;
+  --r-card:  6px;
+  --r-panel: 10px;
+
+  /* --- Spacing — base unit 4px ----------------------------------------- */
+  --s-1: 4px;   --s-2: 8px;   --s-3: 12px;  --s-4: 16px;
+  --s-6: 24px;  --s-8: 32px;  --s-12: 48px; --s-16: 64px;
+  --s-24: 96px; --s-32: 128px;
+
+  /* --- Type scale — Zone A: fluid and oversized (§3.3) ----------------- */
+  --display: clamp(2.75rem, 7vw, 6rem);
+  --h1:      clamp(2rem, 4.5vw, 3.5rem);
+  --h2:      clamp(1.5rem, 2.5vw, 2rem);
+  --lede:    clamp(1.125rem, 1.6vw, 1.375rem);
+
+  /* --- Type scale — Zone B: fixed. Tools should not resize with the window. */
+  --ui-lg: 15px;  --ui: 13px;  --ui-sm: 12px;  --ui-xs: 11px;
+
+  /* --- Motion (§4.2). Scrubs are linear ALWAYS and carry no token here,
+         because a scrub's timing function is the user's finger. ---------- */
+  --t-instant: 80ms;
+  --t-snap:    120ms;
+  --t-trans:   240ms;
+  --t-reveal:  700ms;
+  --e-snap:   cubic-bezier(.2,0,0,1);
+  --e-trans:  cubic-bezier(.32,.72,0,1);
+  --e-reveal: cubic-bezier(.16,1,.3,1);
+
+  /* --- Blueprint grid --------------------------------------------------- */
+  --grid-repeat: 24px;
+}
+
+/* =========================================================================
+   Paper ground — the Act 4 inversion (§5.4), and the seed of the deferred
+   full light theme (§3.1 concession 2). Applied by [data-ground="paper"].
+
+   §5.4 warns: "--safe, --review, --accent and especially --blocked were
+   tuned against #0B0F17 and will all fail against paper." They do — all
+   four measure between 2.17:1 and 3.74:1. A second triad is authored here
+   and held to the same AA floor by the same CI check.
+
+   One correction the linter forced: §5.4's proposed --text-low of #6E7686
+   measures 4.37:1 on paper, just under AA. Corrected to #666E7D (4.91:1).
+   ========================================================================= */
+[data-ground="paper"] {
+  color-scheme: light;
+
+  --bg-void:      #F1F1EC;
+  --bg-base:      var(--paper);
+  --bg-raised:    #FFFFFF;
+  --bg-overlay:   #FFFFFF;
+
+  --line-hair:    rgba(0,0,0,0.06);
+  --line-soft:    rgba(0,0,0,0.10);
+  --line-strong:  rgba(0,0,0,0.22);
+
+  --text-hi:      var(--paper-ink);  /* 17.2:1 on paper */
+  --text-mid:     #4A5160;           /*  7.6:1 */
+  --text-low:     #666E7D;           /*  4.9:1 — corrected from #6E7686 */
+
+  --accent:       #1A56C4;           /*  6.3:1 */
+  --accent-dim:   rgba(26,86,196,0.10);
+
+  --safe:         #0F7050;           /*  5.8:1 */
+  --review:       #8A5A06;           /*  5.7:1 */
+  --blocked:      #B92329;           /*  6.0:1 */
+  --blocked-text: #B92329;           /*  strong enough at small sizes here */
+
+  --paper-lift:
+    0 1px 2px rgba(0,0,0,.10),
+    0 8px 24px -4px rgba(0,0,0,.10),
+    0 24px 64px -12px rgba(0,0,0,.08);
+}
