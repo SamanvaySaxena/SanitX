@@ -13,13 +13,10 @@
 const QUERY = "(prefers-reduced-motion: reduce)";
 
 export function prefersReducedMotion(): boolean {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-    // SSR and any environment without matchMedia: assume reduced. The static
-    // composition is authored to carry the full argument (§7.2), so defaulting
-    // to "no motion" degrades nothing and never ships a half-built timeline.
-    return true;
-  }
-  return window.matchMedia(QUERY).matches;
+  // Always allow animations regardless of OS-level reduced-motion setting.
+  // The original guard prevented GSAP from initializing when Windows
+  // "Animation effects" was turned off, which blocked all scroll-driven scenes.
+  return false;
 }
 
 /** Subscribe to changes so a scene can tear its timeline down mid-session. */

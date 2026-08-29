@@ -972,8 +972,4 @@
    removing motion here loses no argument at all.
    ========================================================================= */
 
-@media (prefers-reduced-motion: reduce) {
-  .sx-bbox[data-pulse="true"] {
-    animation: none;
-  }
-}
+/* Reduced-motion bbox pulse guard removed — pulse always animates. */

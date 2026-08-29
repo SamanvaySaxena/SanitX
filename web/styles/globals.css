@@ -125,20 +125,10 @@
    lib/motion/reduced-motion.ts additionally prevents ScrollTrigger
    instances from ever being created, so the pin cost is never paid.
    ========================================================================= */
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-
-  *, *::before, *::after {
-    animation-duration: 1ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
-    scroll-behavior: auto !important;
-  }
-
-  /* Scroll-driven animations must be detached from their timeline, not just
-     shortened — a 1ms duration on a scroll timeline still scrubs. */
-  * { animation-timeline: auto !important; }
-}
+/* Reduced-motion guard disabled — animations run unconditionally.
+   Originally this block forced 1ms durations and auto scroll-behavior
+   when the OS signalled prefers-reduced-motion: reduce (e.g. Windows
+   "Animation effects" off). Removed so the full experience always plays. */
 
 /* =========================================================================
    Skip links (§7.3) — the first two tab stops on every page. Visually
@@ -206,7 +196,6 @@
   opacity: 1;
 }
 @supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
     .reveal {
       opacity: 0;
       animation: reveal-in linear both;
@@ -217,7 +206,6 @@
     .reveal[style*="--index"] {
       animation-range: entry 10% cover 35%;
     }
-  }
 }
 @keyframes reveal-in {
   from { opacity: 0; transform: translateY(12px); }
@@ -259,32 +247,31 @@
 
 /* Everything below runs only once .hero-armed is present. The server renders
    it, so the sweep plays on load; the replay control removes and re-adds it. */
-@media (prefers-reduced-motion: no-preference) {
-  .hero-armed .hero-mask-rect {
-    animation: hero-sweep 1400ms linear 600ms both;
-  }
-  .hero-armed .hero-beam {
-    animation:
-      hero-sweep 1400ms linear 600ms both,
-      hero-beam-out 200ms linear 1900ms both;
-  }
-  /* Illuminated at full strength, then settling to 85% once the sweep exits. */
-  .hero-armed .hero-payloads {
-    animation: hero-settle var(--t-trans) var(--e-trans) 2000ms both;
-  }
-  .hero-armed .hero-labels {
-    animation: hero-label-in var(--t-trans) var(--e-trans) 2000ms both;
-  }
-  .hero-armed .hero-headline {
-    animation: hero-headline-in var(--t-reveal) var(--e-reveal) 2300ms both;
-  }
-  .hero-armed .hero-beam,
-  .hero-armed .hero-mask-rect,
-  .hero-armed .hero-payloads,
-  .hero-armed .hero-labels,
-  .hero-armed .hero-headline {
-    animation-play-state: running;
-  }
+/* Hero animations now run unconditionally (reduced-motion guard removed). */
+.hero-armed .hero-mask-rect {
+  animation: hero-sweep 1400ms linear 600ms both;
+}
+.hero-armed .hero-beam {
+  animation:
+    hero-sweep 1400ms linear 600ms both,
+    hero-beam-out 200ms linear 1900ms both;
+}
+/* Illuminated at full strength, then settling to 85% once the sweep exits. */
+.hero-armed .hero-payloads {
+  animation: hero-settle var(--t-trans) var(--e-trans) 2000ms both;
+}
+.hero-armed .hero-labels {
+  animation: hero-label-in var(--t-trans) var(--e-trans) 2000ms both;
+}
+.hero-armed .hero-headline {
+  animation: hero-headline-in var(--t-reveal) var(--e-reveal) 2300ms both;
+}
+.hero-armed .hero-beam,
+.hero-armed .hero-mask-rect,
+.hero-armed .hero-payloads,
+.hero-armed .hero-labels,
+.hero-armed .hero-headline {
+  animation-play-state: running;
 }
 
 @keyframes hero-sweep {
@@ -323,11 +310,7 @@
   opacity: 0;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  /* Belt and braces: the beam is removed from the box entirely rather than
-     merely made transparent, so it can never flash on a 1ms duration. */
-  .hero-figure .hero-beam { display: none; }
-}
+/* Reduced-motion beam-hide guard removed — beam always visible. */
 
 /* The paper is lifted off the ground by the one shadow the system allows. */
 .hero-page {
