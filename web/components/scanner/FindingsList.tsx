@@ -19,7 +19,7 @@
 
 import * as React from "react";
 import { Chip } from "@/components/primitives/Chip";
-import { VECTORS } from "@/lib/vectors";
+import { DETECTOR_NAMES, VECTORS } from "@/lib/vectors";
 import type { Finding, Severity } from "@/lib/types";
 
 /**
@@ -41,7 +41,7 @@ export const SEVERITY_PRESENTATION: Record<
 };
 
 const vectorName = (id: Finding["vector"]): string =>
-  VECTORS.find((v) => v.id === id)?.name ?? id;
+  VECTORS.find((v) => v.id === id)?.name ?? DETECTOR_NAMES[id] ?? id;
 
 export const findingRowId = (id: string) => `sx-finding-${id}`;
 export const findingPanelId = (id: string) => `sx-evidence-${id}`;

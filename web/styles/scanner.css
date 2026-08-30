@@ -815,6 +815,106 @@
 }
 
 /* =========================================================================
+   Divergence panel — §6.1 pane 3. The in-product form of Act 4 (§5.4).
+   Two columns of text that should be identical and are not.
+   ========================================================================= */
+
+.sx-diverge {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--s-1) 1px;
+  padding: 1px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-card);
+  background: var(--line-hair);
+  font-size: var(--ui-xs);
+}
+
+/* The divider between the panes turns --blocked once the columns diverge
+   (§5.4). It is the gap's own ground, so no extra element is needed. */
+.sx-diverge[data-diverged="true"] {
+  background: color-mix(in oklab, var(--blocked) 45%, var(--line-hair));
+}
+
+.sx-diverge-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--s-2) var(--s-3);
+  background: var(--bg-raised);
+  color: var(--text-hi);
+  letter-spacing: 0.1em;
+}
+
+.sx-diverge-sub {
+  color: var(--text-low);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.sx-diverge-line {
+  margin: 0;
+  padding: 3px var(--s-3);
+  background: var(--bg-base);
+  color: var(--text-mid);
+  overflow-wrap: anywhere;
+}
+
+.sx-diverge-line[data-state="absent"] {
+  color: var(--text-low);
+}
+
+.sx-diverge-line[data-state="injected"] {
+  background: var(--bg-raised);
+  color: var(--blocked-text);
+}
+
+.sx-diverge-void {
+  color: var(--text-low);
+  font-style: italic;
+}
+
+/* §3.2 law 2 — the injected line is named in words, never only in red. */
+.sx-diverge-tag {
+  display: block;
+  margin-top: 2px;
+  color: var(--blocked-text);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sx-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-3);
+  margin: var(--s-3) 0 0;
+}
+
+.sx-metrics dt {
+  color: var(--text-low);
+  font-size: var(--ui-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.sx-metrics dd {
+  margin: 2px 0 0;
+  color: var(--text-hi);
+  font-size: var(--ui);
+}
+
+.sx-metrics dd[data-fail="true"] {
+  color: var(--blocked-text);
+}
+
+.sx-metric-thresh {
+  display: block;
+  color: var(--text-low);
+  font-size: var(--ui-xs);
+}
+
+/* =========================================================================
    Status line — §7.3: selection announced via a polite live region, and the
    finding count announced on scan completion.
 
@@ -973,3 +1073,22 @@
    ========================================================================= */
 
 /* Reduced-motion bbox pulse guard removed — pulse always animates. */
+
+/* =========================================================================
+   Local spacing helpers. These exist so the components carry no inline style
+   objects — §3.4's scale is the only source of spacing, and a `style={{}}`
+   prop is how a magic number gets in.
+   ========================================================================= */
+
+.sx-section-top {
+  margin-top: var(--s-4);
+}
+
+.sx-weights-top {
+  margin-top: var(--s-3);
+}
+
+/* A definition-list value that reads as a label rather than a figure. */
+.sx-dd-left {
+  text-align: left;
+}

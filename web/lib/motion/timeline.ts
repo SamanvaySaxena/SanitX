@@ -11,7 +11,12 @@
      2. never animate the pinned element — pinTarget and animation scope differ
      3. anticipatePin: 1                — baked into the factory default
    ========================================================================= */
-import { prefersReducedMotion, applyWillChange, clearWillChange } from "./reduced-motion";
+import {
+  prefersReducedMotion,
+  onReducedMotionChange,
+  applyWillChange,
+  clearWillChange,
+} from "./reduced-motion";
 
 export interface PinnedSceneOptions {
   /** The wrapper that gets pinned. Nothing inside the timeline may touch it. */
@@ -49,16 +54,67 @@ export type SceneTeardown = () => void;
 /**
  * Creates a pinned, scrubbed scene. Returns a no-op teardown and never touches
  * GSAP when reduced motion is requested — the instance is not created at all.
+ *
+ * The preference is now a live setting the visitor owns (§7.2, MotionToggle),
+ * so this also RE-SYNCS: choosing "Reduced" kills the scene where it stands,
+ * and choosing "Full" builds it, both without a reload. Doing that here rather
+ * than in each act means every scene gets the behaviour from one place and no
+ * act can forget it.
  */
 export async function createPinnedScene(
   opts: PinnedSceneOptions,
 ): Promise<SceneTeardown> {
-  if (prefersReducedMotion()) return () => {};
+  let inner: SceneTeardown | null = null;
+  let building = false;
+  let disposed = false;
 
+  async function sync(): Promise<void> {
+    if (disposed) return;
+    if (prefersReducedMotion()) {
+      inner?.();
+      inner = null;
+      return;
+    }
+    // Already running, or an async build is already in flight for this scene.
+    if (inner || building) return;
+    building = true;
+    try {
+      const teardown = await buildScene(opts);
+      // The preference can flip, or the component unmount, while the GSAP
+      // import is in flight. Whatever we just built is then already wrong.
+      if (disposed || prefersReducedMotion()) teardown();
+      else inner = teardown;
+    } finally {
+      building = false;
+    }
+  }
+
+  await sync();
+  const off = onReducedMotionChange(() => void sync());
+
+  return () => {
+    disposed = true;
+    off();
+    inner?.();
+    inner = null;
+  };
+}
+
+async function buildScene(
+  opts: PinnedSceneOptions,
+): Promise<SceneTeardown> {
   const [{ gsap }, { ScrollTrigger }] = await Promise.all([
     import("gsap"),
     import("gsap/ScrollTrigger"),
   ]);
+
+  /* The import is async, and a lot can happen while it is in flight: a route
+     change, a StrictMode double-mount's cleanup, or a test tearing down its
+     DOM. Building a ScrollTrigger against a detached node leaves an orphan
+     instance that measures and pins against nothing, so bail if the target
+     left the document while we were waiting. */
+  if (!opts.pinTarget.isConnected) return () => {};
+
   gsap.registerPlugin(ScrollTrigger);
 
   const targets = opts.willChangeTargets ?? [];

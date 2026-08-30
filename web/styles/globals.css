@@ -125,10 +125,41 @@
    lib/motion/reduced-motion.ts additionally prevents ScrollTrigger
    instances from ever being created, so the pin cost is never paid.
    ========================================================================= */
-/* Reduced-motion guard disabled — animations run unconditionally.
-   Originally this block forced 1ms durations and auto scroll-behavior
-   when the OS signalled prefers-reduced-motion: reduce (e.g. Windows
-   "Animation effects" off). Removed so the full experience always plays. */
+/* Two rules, one meaning: "this visitor wants less motion".
+
+   The first honours the OS, unless the visitor has explicitly chosen Full in
+   the motion toggle (§7.2) — Windows' "Animation effects: off" is a taskbar
+   setting for a lot of people, and :not([data-motion="full"]) is how they say
+   so without us guessing on their behalf.
+
+   The second honours a visitor who chose Reduced while their OS says nothing.
+
+   Neither hides content. §7.2's content test is that every act's argument
+   survives motion being removed, which is a property of the static
+   composition, not of this block. */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) *,
+  :root:not([data-motion="full"]) *::before,
+  :root:not([data-motion="full"]) *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  animation-duration: 1ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+  transition-delay: 0ms !important;
+  scroll-behavior: auto !important;
+}
 
 /* =========================================================================
    Skip links (§7.3) — the first two tab stops on every page. Visually

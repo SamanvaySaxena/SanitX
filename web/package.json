@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
+    
   },
   "dependencies": {
     "geist": "^1.6.1",

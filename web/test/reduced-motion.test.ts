@@ -2,12 +2,15 @@
  * §7.2 — "Under reduced motion, ScrollTrigger instances are not created at
  * all — not created-then-disabled — so the pinning cost is never paid."
  */
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  MOTION_STORAGE_KEY,
   applyWillChange,
   clearWillChange,
   onReducedMotionChange,
   prefersReducedMotion,
+  readMotionPreference,
+  setMotionPreference,
 } from "@/lib/motion/reduced-motion";
 import { createPinnedScene, lerp, subProgress } from "@/lib/motion/timeline";
 
@@ -30,7 +33,15 @@ function mockMatchMedia(matches: boolean) {
   return listeners;
 }
 
-afterEach(() => vi.restoreAllMocks());
+beforeEach(() => {
+  delete document.documentElement.dataset.motion;
+  window.localStorage.clear();
+});
+
+afterEach(() => {
+  delete document.documentElement.dataset.motion;
+  vi.restoreAllMocks();
+});
 
 describe("the reduced-motion guard", () => {
   it("reports the media query state", () => {
@@ -48,15 +59,38 @@ describe("the reduced-motion guard", () => {
     window.matchMedia = original;
   });
 
-  it("notifies subscribers and unsubscribes cleanly", () => {
-    const listeners = mockMatchMedia(false);
+  it("notifies subscribers with the RESOLVED answer, and unsubscribes cleanly", () => {
+    // The subscriber must not have to combine the OS query with the visitor's
+    // own setting itself; it gets the one answer that decides whether a
+    // ScrollTrigger may exist.
+    const listeners = mockMatchMedia(true);
     const handler = vi.fn();
     const off = onReducedMotionChange(handler);
     expect(listeners).toHaveLength(1);
+
     listeners[0]({ matches: true } as MediaQueryListEvent);
-    expect(handler).toHaveBeenCalledWith(true);
+    expect(handler).toHaveBeenLastCalledWith(true);
+
+    // Same OS event, but the visitor has since asked for motion anyway.
+    document.documentElement.dataset.motion = "full";
+    listeners[0]({ matches: true } as MediaQueryListEvent);
+    expect(handler).toHaveBeenLastCalledWith(false);
+
     off();
     expect(listeners).toHaveLength(0);
+  });
+
+  it("notifies when the visitor changes the preference, not just the OS", () => {
+    mockMatchMedia(false);
+    const handler = vi.fn();
+    const off = onReducedMotionChange(handler);
+    setMotionPreference("reduced");
+    expect(handler).toHaveBeenLastCalledWith(true);
+    setMotionPreference("full");
+    expect(handler).toHaveBeenLastCalledWith(false);
+    off();
+    setMotionPreference("system");
+    expect(handler).toHaveBeenCalledTimes(2);
   });
 
   // The load-bearing assertion: GSAP is never even imported.
@@ -105,5 +139,72 @@ describe("scrub maths", () => {
     expect(subProgress(0.1, 0.25, 0.75)).toBe(0);
     expect(subProgress(0.9, 0.25, 0.75)).toBe(1);
     expect(subProgress(0.5, 0.5, 0.5)).toBe(1);
+  });
+});
+
+describe("the motion preference (§7.2) is the visitor's, and defaults to the OS", () => {
+  it("defaults to system, so nothing overrides the OS without an explicit act", () => {
+    expect(readMotionPreference()).toBe("system");
+    mockMatchMedia(true);
+    expect(prefersReducedMotion()).toBe(true);
+  });
+
+  it("lets a visitor keep motion despite an OS-wide reduce signal", () => {
+    mockMatchMedia(true);
+    setMotionPreference("full");
+    expect(document.documentElement.dataset.motion).toBe("full");
+    expect(prefersReducedMotion()).toBe(false);
+  });
+
+  it("lets a visitor drop motion the OS never asked to drop", () => {
+    mockMatchMedia(false);
+    setMotionPreference("reduced");
+    expect(prefersReducedMotion()).toBe(true);
+  });
+
+  it("persists a choice and clears it again on system", () => {
+    mockMatchMedia(false);
+    setMotionPreference("full");
+    expect(window.localStorage.getItem(MOTION_STORAGE_KEY)).toBe("full");
+    setMotionPreference("system");
+    expect(window.localStorage.getItem(MOTION_STORAGE_KEY)).toBeNull();
+    expect(document.documentElement.dataset.motion).toBeUndefined();
+    expect(prefersReducedMotion()).toBe(false);
+  });
+
+  it("ignores a junk attribute rather than treating it as an override", () => {
+    mockMatchMedia(true);
+    document.documentElement.dataset.motion = "yes-please";
+    expect(readMotionPreference()).toBe("system");
+    expect(prefersReducedMotion()).toBe(true);
+  });
+
+  it("survives localStorage being unavailable", () => {
+    mockMatchMedia(true);
+    const spy = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new Error("denied");
+      });
+    expect(() => setMotionPreference("full")).not.toThrow();
+    // The attribute still applies, so the current page honours the choice.
+    expect(prefersReducedMotion()).toBe(false);
+    spy.mockRestore();
+  });
+
+  it("builds no ScrollTrigger when the visitor chose reduced (§7.2)", async () => {
+    mockMatchMedia(false);
+    setMotionPreference("reduced");
+    const build = vi.fn();
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    const teardown = await createPinnedScene({
+      pinTarget: el,
+      end: "+=600%",
+      build,
+    });
+    expect(build).not.toHaveBeenCalled();
+    teardown();
+    el.remove();
   });
 });

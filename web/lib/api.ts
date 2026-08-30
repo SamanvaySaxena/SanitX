@@ -8,6 +8,12 @@
 import type { ScanEvent, ScanResponse } from "./types";
 import { SAMPLES, type SampleId } from "./fixtures/scans";
 
+export const SCAN_ENDPOINT =
+  process.env.NEXT_PUBLIC_SCAN_ENDPOINT ?? "http://localhost:7000/api/scan";
+
+export const SAMPLE_ENDPOINT_BASE =
+  process.env.NEXT_PUBLIC_SAMPLE_ENDPOINT_BASE ?? "http://localhost:7000/api/samples";
+
 /* --- §6.3: enforce the SERVER caps in the browser, against the same
        constants the API enforces (PIPELINE_IMPROVEMENTS Phase 1). A 90MB file
        is refused instantly with the actual limit named — never after a
@@ -69,6 +75,8 @@ export interface ScanOptions {
   signal?: AbortSignal;
   /** Demo-mode replays run at this fraction of the fixture timings. */
   speed?: number;
+  /** Live-mode upload or fetched sample. Demo streams ignore it. */
+  file?: File;
 }
 
 /**
@@ -117,7 +125,7 @@ export async function* streamDemoScan(
  */
 export async function* streamLiveScan(
   file: File,
-  endpoint: string,
+  endpoint: string = SCAN_ENDPOINT,
   opts: ScanOptions = {},
 ): AsyncGenerator<ScanEvent> {
   const body = new FormData();
@@ -168,6 +176,25 @@ export async function* streamLiveScan(
       }
     }
   }
+}
+
+export async function fetchSampleFile(
+  id: SampleId,
+  opts: { signal?: AbortSignal } = {},
+): Promise<File> {
+  const res = await fetch(`${SAMPLE_ENDPOINT_BASE}/${id}`, {
+    method: "GET",
+    signal: opts.signal,
+  });
+  if (!res.ok) {
+    throw new Error(`Sample ${id} could not be loaded from the scan backend.`);
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get("content-disposition") ?? "";
+  const match = /filename="?([^";]+)"?/i.exec(disposition);
+  return new File([blob], match?.[1] ?? `${id}.pdf`, {
+    type: blob.type || LIMITS.mime,
+  });
 }
 
 /** Reduces a completed event stream to a response. Used by tests and by the

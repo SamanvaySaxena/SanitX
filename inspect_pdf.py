@@ -12,6 +12,32 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 MARKDOWN_EXTENSIONS = (".md", ".markdown", ".mdown", ".mkd")
 
+
+def _sample_border_pixels(pix, px0, py0, px1, py1, padding, stride=3, cap=200):
+    coords = []
+
+    for y in range(max(0, py0 - padding), py0, stride):
+        for x in range(px0, px1, stride):
+            coords.append((x, y))
+
+    for y in range(py1, min(pix.height, py1 + padding), stride):
+        for x in range(px0, px1, stride):
+            coords.append((x, y))
+
+    for y in range(py0, py1, stride):
+        for x in range(max(0, px0 - padding), px0, stride):
+            coords.append((x, y))
+
+    for y in range(py0, py1, stride):
+        for x in range(px1, min(pix.width, px1 + padding), stride):
+            coords.append((x, y))
+
+    if len(coords) > cap:
+        step = max(1, len(coords) // cap)
+        coords = coords[::step][:cap]
+
+    return [pix.pixel(x, y) for x, y in coords]
+
 # -------------------------------------------------------------------
 # Markdown detection heuristics (the Markdown equivalent of the PDF
 # pixel-based small_text / low_contrast / near_border checks).
@@ -76,6 +102,8 @@ def _strip_active_content(doc):
     all of it, propagating active content instead of containing it.
     """
 
+    removed = 0
+
     # 1) Let PyMuPDF strip JavaScript, embedded/attached files and
     #    sensitive metadata. hidden_text is intentionally left alone
     #    (False) because Layer 1 relies on inspecting/highlighting
@@ -108,7 +136,10 @@ def _strip_active_content(doc):
     #    moment the PDF is opened.
     for key in ("OpenAction", "AA"):
         try:
+            before = doc.xref_get_key(catalog_xref, key)
             doc.xref_set_key(catalog_xref, key, "null")
+            if before and before[0] != "null":
+                removed += 1
         except Exception:
             pass
 
@@ -121,7 +152,10 @@ def _strip_active_content(doc):
             names_xref = int(names_entry[1].split()[0])
             for key in ("JavaScript", "EmbeddedFiles"):
                 try:
+                    before = doc.xref_get_key(names_xref, key)
                     doc.xref_set_key(names_xref, key, "null")
+                    if before and before[0] != "null":
+                        removed += 1
                 except Exception:
                     pass
     except Exception:
@@ -135,7 +169,10 @@ def _strip_active_content(doc):
             acroform_xref = int(acroform_entry[1].split()[0])
             for key in ("XFA", "AA"):
                 try:
+                    before = doc.xref_get_key(acroform_xref, key)
                     doc.xref_set_key(acroform_xref, key, "null")
+                    if before and before[0] != "null":
+                        removed += 1
                 except Exception:
                     pass
     except Exception:
@@ -157,17 +194,21 @@ def _strip_active_content(doc):
             try:
                 xref = annot.xref
                 for key in ("A", "AA"):
+                    before = doc.xref_get_key(xref, key)
                     doc.xref_set_key(xref, key, "null")
+                    if before and before[0] != "null":
+                        removed += 1
             except Exception:
                 pass
 
             if subtype in executable_subtypes:
                 try:
                     page.delete_annot(annot)
+                    removed += 1
                 except Exception:
                     pass
 
-    return doc
+    return removed
 
 
 async def _layer_1_pdf(file):
@@ -247,39 +288,14 @@ async def _layer_1_pdf(file):
                     # Number of pixels sampled around the text
                     padding = 4 * scale
 
-                    samples = []
-
-                    # Top
-                    for y in range(
-                            max(0, py0 - padding),
-                            py0
-                    ):
-                        for x in range(px0, px1):
-                            samples.append(pix.pixel(x, y))
-
-                    # Bottom
-                    for y in range(
-                            py1,
-                            min(pix.height, py1 + padding)
-                    ):
-                        for x in range(px0, px1):
-                            samples.append(pix.pixel(x, y))
-
-                    # Left
-                    for y in range(py0, py1):
-                        for x in range(
-                                max(0, px0 - padding),
-                                px0
-                        ):
-                            samples.append(pix.pixel(x, y))
-
-                    # Right
-                    for y in range(py0, py1):
-                        for x in range(
-                                px1,
-                                min(pix.width, px1 + padding)
-                        ):
-                            samples.append(pix.pixel(x, y))
+                    samples = _sample_border_pixels(
+                        pix,
+                        px0,
+                        py0,
+                        px1,
+                        py1,
+                        padding,
+                    )
 
                     if samples:
 

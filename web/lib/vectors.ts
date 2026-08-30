@@ -151,3 +151,10 @@ export const VECTOR_COUNT_WORD =
 
 export const HERO_VECTORS = VECTORS.filter((v) => v.hero);
 export const STANDARD_VECTORS = VECTORS.filter((v) => !v.hero);
+
+export const DETECTOR_NAMES: Partial<Record<VectorId, string>> = {
+  small_text: "Small text",
+  low_contrast: "Low contrast",
+  near_border: "Near page border",
+  semantic_injection: "Semantic injection",
+};

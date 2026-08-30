@@ -28,7 +28,11 @@ export type VectorId =
   | "unicode_obfuscation"
   | "metadata_channel"
   | "image_steganography"
-  | "shadow_signature";
+  | "shadow_signature"
+  | "small_text"
+  | "low_contrast"
+  | "near_border"
+  | "semantic_injection";
 
 /** PDF user-space coordinates, origin top-left, as PyMuPDF reports them. */
 export interface BBox {

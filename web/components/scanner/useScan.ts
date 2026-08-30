@@ -19,7 +19,13 @@
    ========================================================================= */
 
 import * as React from "react";
-import { streamDemoScan, type ScanOptions } from "@/lib/api";
+import {
+  SCAN_ENDPOINT,
+  isDemoMode,
+  streamDemoScan,
+  streamLiveScan,
+  type ScanOptions,
+} from "@/lib/api";
 import type { SampleId } from "@/lib/fixtures/scans";
 import type {
   Divergence,
@@ -50,7 +56,7 @@ export type ScanStatus =
  */
 export type ScanStreamFactory = (
   sample: SampleId,
-  opts: ScanOptions,
+  opts: ScanOptions & { file?: File },
 ) => AsyncIterable<ScanEvent>;
 
 /** The six phases of PIPELINE_IMPROVEMENTS §5, seeded before the first frame
@@ -231,7 +237,7 @@ export interface UseScanResult extends ScanState {
   /** True while a run is in flight — the only thing that should gate a
       "cancel" affordance. There is no separate spinner flag on purpose. */
   scanning: boolean;
-  start: (sample: SampleId, uploadName?: string | null) => void;
+  start: (sample: SampleId, uploadName?: string | null, file?: File) => void;
   /** §6.5 — "cancel button that actually aborts the request." */
   cancel: () => void;
   reset: () => void;
@@ -243,6 +249,13 @@ export function useScan(stream?: ScanStreamFactory): UseScanResult {
   const runRef = React.useRef(0);
   const streamRef = React.useRef<ScanStreamFactory | undefined>(stream);
   streamRef.current = stream;
+
+  const defaultStream = React.useCallback<ScanStreamFactory>((sample, opts) => {
+    if (!isDemoMode() && opts.file) {
+      return streamLiveScan(opts.file, SCAN_ENDPOINT, opts);
+    }
+    return streamDemoScan(sample, opts);
+  }, []);
 
   // Abort on unmount. An orphaned generator would keep dispatching into a
   // dead reducer, which is the classic streaming-UI leak.
@@ -269,7 +282,7 @@ export function useScan(stream?: ScanStreamFactory): UseScanResult {
   }, []);
 
   const start = React.useCallback(
-    (sample: SampleId, uploadName: string | null = null) => {
+    (sample: SampleId, uploadName: string | null = null, file?: File) => {
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
@@ -277,13 +290,14 @@ export function useScan(stream?: ScanStreamFactory): UseScanResult {
 
       dispatch({ kind: "start", sample, uploadName });
 
-      const factory = streamRef.current ?? streamDemoScan;
+      const factory = streamRef.current ?? defaultStream;
       const live = () => run === runRef.current && !controller.signal.aborted;
 
       void (async () => {
         try {
           for await (const event of factory(sample, {
             signal: controller.signal,
+            file,
           })) {
             if (!live()) return;
             dispatch({ kind: "event", event });
@@ -308,7 +322,7 @@ export function useScan(stream?: ScanStreamFactory): UseScanResult {
         dispatch({ kind: "settle" });
       })();
     },
-    [],
+    [defaultStream],
   );
 
   return {

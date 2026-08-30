@@ -36,11 +36,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
+    /* §7.2 — no data-motion attribute is rendered here. The default IS the
+       operating system's answer, and only the visitor's own choice in
+       components/primitives/MotionToggle.tsx ever overrides it. The script
+       below restores that choice before first paint. */
     <html
       lang="en"
       className={`${GeistSans.variable} ${GeistMono.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        {/* Runs before the body paints, so a scene never builds a timeline
+            against the wrong preference and then tears it down — which would
+            be a pinned frame flashing at exactly the visitor who asked not to
+            see one. Wrapped because a blocked localStorage must degrade to
+            "follow the system", not to a broken page. */}
+        <script
+          id="sanitx-motion-preference"
+          dangerouslySetInnerHTML={{
+            __html: `try{var m=localStorage.getItem("sanitx.motion");if(m==="full"||m==="reduced")document.documentElement.dataset.motion=m}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="bg-[var(--bg-base)] text-[var(--text-mid)] antialiased">
         {/* §7.3 — skip-to-content and skip-to-scanner are the first two tab
             stops on every page. The second one is the professional's escape

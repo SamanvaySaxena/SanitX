@@ -52,7 +52,7 @@ dangerous_sql_queries = [
     "DROP TABLE {table} CASCADE;",
     "DROP MATERIALIZED VIEW {view_name};",
     "DROP DATABASE {database_name};",
-    "DROP SCHEMA {schema_name} CASCADE;"
+    "DROP SCHEMA {schema_name} CASCADE;",
 
     # --- Unconditional & Destructive Updates ---
     "UPDATE {table} SET {column} = {value};",
