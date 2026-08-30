@@ -6,7 +6,6 @@ import { DiscrepancyGate } from "@/components/narrative/DiscrepancyGate";
 import { RiskCalculator } from "@/components/narrative/RiskCalculator";
 import { Handoff } from "@/components/narrative/Handoff";
 import { EmbeddedInstrument } from "@/components/narrative/EmbeddedInstrument";
-import { EngineeringContract } from "@/components/narrative/EngineeringContract";
 
 /* Zone A — the narrative site. The nine acts of §5, composed in order.
 
@@ -19,7 +18,7 @@ import { EngineeringContract } from "@/components/narrative/EngineeringContract"
    The anchors the earlier acts link to are owned by the later ones:
      #taxonomy    Act 2, from the hero's "Open methodology" (§5.9)
      #scanner     Act 7, from the skip link and Act 1's audience row
-     #api-contract, #limitations   Act 8, from Act 0 and Act 1 (§5.9) */
+     #pipeline    Act 3, from Act 1's audience row (§5.9) */
 export default function HomePage() {
   return (
     <>
@@ -31,7 +30,6 @@ export default function HomePage() {
       <RiskCalculator />
       <Handoff />
       <EmbeddedInstrument />
-      <EngineeringContract />
     </>
   );
 }

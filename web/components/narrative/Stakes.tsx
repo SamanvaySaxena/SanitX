@@ -12,8 +12,8 @@
       matters, so the slots render their labels and say what they are waiting
       for. Filling them in is a data change, not a copy change.
    3. The three audiences, named. §2.6's "multiple audiences, one narrative",
-      and per §5.9 it puts the limitations link on screen two rather than at
-      the bottom of a ~1800vh page.
+      and per §5.9 it puts each audience's next step on screen two rather than
+      at the bottom of a ~1800vh page.
 
    Motion: CSS `animation-timeline: view()` via the existing .reveal utility.
    Zero JavaScript — this is a server component and stays one.
@@ -39,26 +39,26 @@ const STAT_SLOTS: StatSlot[] = [
 const PENDING = "pending the adversarial corpus";
 
 export interface StakesProps {
-  /** Act 8's left column. */
-  apiContractHref?: string;
+  /** Act 3, the detection pipeline. */
+  pipelineHref?: string;
   /** Act 7, the embedded instrument. /scan renders the identical component. */
   scannerHref?: string;
-  /** Act 8's right column. */
-  limitationsHref?: string;
+  /** Act 2, the threat taxonomy. */
+  taxonomyHref?: string;
 }
 
 export function Stakes({
-  apiContractHref = "#api-contract",
+  pipelineHref = "#pipeline",
   scannerHref = "#scanner",
-  limitationsHref = "#limitations",
+  taxonomyHref = "#taxonomy",
 }: StakesProps) {
   const audiences = [
-    { href: apiContractHref, who: "Building a RAG pipeline", to: "the API contract" },
+    { href: pipelineHref, who: "Building a RAG pipeline", to: "the detection pipeline" },
     { href: scannerHref, who: "Screening documents at scale", to: "the scanner" },
     {
-      href: limitationsHref,
+      href: taxonomyHref,
       who: "Evaluating this as a control",
-      to: "what we don't catch yet",
+      to: "the threat taxonomy",
     },
   ];
 

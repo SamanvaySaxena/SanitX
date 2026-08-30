@@ -71,14 +71,11 @@ describe("the CTAs (§2.5, §3.6)", () => {
 });
 
 describe("distributed trust signals (§5.9)", () => {
-  it("puts methodology, corpus and limitations links on the first screen", () => {
+  it("puts the methodology and corpus links on the first screen", () => {
     render(<HeroReveal />);
-    const nav = screen.getByRole("navigation", {
-      name: /methodology and limitations/i,
-    });
+    const nav = screen.getByRole("navigation", { name: /methodology/i });
     expect(within(nav).getByText(/open methodology/i)).toBeInTheDocument();
     expect(within(nav).getByText(/adversarial corpus/i)).toBeInTheDocument();
-    expect(within(nav).getByText(/what we don.t catch/i)).toBeInTheDocument();
   });
 });
 

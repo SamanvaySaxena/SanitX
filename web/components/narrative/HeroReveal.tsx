@@ -86,10 +86,10 @@ export function HeroReveal() {
           </div>
 
           {/* §5.9 — trust signals distributed, not stacked at the bottom.
-              These three attach to the hero's "ten vectors" claim, on the
-              first screen, as small links rather than badges. */}
+              These attach to the hero's "ten vectors" claim, on the first
+              screen, as small links rather than badges. */}
           <nav
-            aria-label="Methodology and limitations"
+            aria-label="Methodology"
             className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[var(--line-hair)] pt-5 text-[length:var(--ui-sm)]"
           >
             <a
@@ -103,12 +103,6 @@ export function HeroReveal() {
               href="#taxonomy"
             >
               Adversarial corpus
-            </a>
-            <a
-              className="text-[var(--text-low)] underline decoration-[var(--line-strong)] underline-offset-4 transition-colors duration-[var(--t-snap)] hover:text-[var(--text-hi)]"
-              href="#limitations"
-            >
-              What we don&rsquo;t catch
             </a>
           </nav>
         </div>

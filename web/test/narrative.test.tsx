@@ -56,15 +56,15 @@ describe("§5.1 Act 1 — the stakes", () => {
     expect(text).not.toMatch(/according to|research shows|studies show/i);
   });
 
-  it("names the three audiences and links the limitations from screen two", () => {
+  it("names the three audiences and points each at a live anchor", () => {
     render(<Stakes />);
     const nav = screen.getByRole("navigation", { name: /where to go next/i });
     const links = within(nav).getAllByRole("link");
     expect(links).toHaveLength(3);
-    // §5.9 — the limitations link belongs on screen two, not at the bottom.
-    expect(
-      links.some((a) => /what we don't catch/i.test(a.textContent ?? "")),
-    ).toBe(true);
+    // §5.9 — every destination is a section this page actually renders.
+    for (const a of links) {
+      expect(a.getAttribute("href")).toMatch(/^#(pipeline|scanner|taxonomy)$/);
+    }
   });
 });
 
