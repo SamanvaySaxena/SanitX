@@ -639,27 +639,40 @@
   text-transform: uppercase;
 }
 
+/* Three stacked bands per component: the name, then the control and its
+   readout on one line, then the provenance note. Everything that is prose
+   spans the full width — nothing is left to auto-place into the narrow
+   readout column, which is what turned the captions into one word per line. */
 .rc-row {
   display: grid;
-  grid-template-columns: 1.6ch minmax(0, 1fr) 5ch;
+  grid-template-columns: minmax(0, 1fr) 5ch;
+  grid-template-areas:
+    "label   label"
+    "slider  readout"
+    "source  source";
   align-items: center;
-  gap: var(--s-3);
-  margin-bottom: var(--s-4);
+  column-gap: var(--s-3);
+  row-gap: var(--s-2);
+  margin-bottom: var(--s-6);
 }
 
 .rc-symbol {
   color: var(--text-hi);
   font-size: var(--ui-lg);
+  line-height: 1;
 }
 
 .rc-label {
-  display: block;
+  grid-area: label;
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
   color: var(--text-mid);
   font-size: var(--ui-sm);
 }
 
 .rc-name {
-  color: var(--text-low);
+  color: var(--text-mid);
 }
 
 .rc-number {
@@ -669,7 +682,7 @@
 
 /* The range input. Target size clears the 24px floor (WCAG 2.2 SC 2.5.8). */
 .rc-slider {
-  grid-column: 2;
+  grid-area: slider;
   width: 100%;
   min-height: 24px;
   accent-color: var(--accent);
@@ -799,8 +812,10 @@
 }
 
 .rc-readout {
+  grid-area: readout;
   color: var(--text-mid);
   font-size: var(--ui-sm);
+  text-align: right;
 }
 
 .rc-status {
@@ -812,10 +827,13 @@
 /* §5.5's honesty requirement: the band boundaries are labelled
    "proposed — pending calibration", because they are currently a guess. */
 .rc-source {
-  margin: var(--s-3) 0 0;
+  grid-area: source;
+  max-width: 60ch;
+  margin: 0;
   color: var(--text-low);
   font-size: var(--ui-xs);
   font-style: italic;
+  line-height: 1.5;
 }
 
 /* =========================================================================
