@@ -1,14 +1,14 @@
 # SanitX
 
-### AI-Powered PDF Prompt Injection Detection
+### AI-Powered Document Prompt Injection Detection
 
-SanitX is a security-focused PDF inspection pipeline designed to detect **prompt injection attacks hidden inside PDF documents** before the document is processed by an AI system.
+SanitX is a security-focused inspection pipeline designed to detect **prompt injection attacks hidden inside documents (PDF and Markdown)** before the document is processed by an AI system.
 
 The core idea is simple:
 
-> **Treat every uploaded PDF as untrusted input.**
+> **Treat every uploaded document as untrusted input.**
 
-SanitX combines deterministic PDF analysis with semantic AI analysis to identify suspicious content that traditional text extraction alone may miss.
+SanitX combines deterministic, format-specific analysis with semantic AI analysis to identify suspicious content that traditional text extraction alone may miss.
 
 ---
 
@@ -16,7 +16,8 @@ SanitX combines deterministic PDF analysis with semantic AI analysis to identify
 
 ```text
                     ┌─────────────────┐
-                    │   PDF Upload    │
+                    │ Document Upload │
+                    │ (PDF/Markdown)  │
                     │    Frontend     │
                     └────────┬────────┘
                              │
@@ -29,12 +30,19 @@ SanitX combines deterministic PDF analysis with semantic AI analysis to identify
                              ▼
                  ┌───────────────────────┐
                  │       Layer 1         │
-                 │      PyMuPDF          │
+                 │ Deterministic Scanner │
                  │                       │
-                 │  • Tiny text         │
-                 │  • Low contrast      │
-                 │  • Border placement  │
-                 │  • Suspicious SQL    │
+                 │ PDF:                  │
+                 │ • Tiny text           │
+                 │ • Low contrast        │
+                 │ • Border placement    │
+                 │ • Active content strip│
+                 │                       │
+                 │ Markdown:             │
+                 │ • Invisible Unicode   │
+                 │ • Hidden HTML comments│
+                 │ • CSS hidden text     │
+                 │ • Active tags & URIs  │
                  └──────────┬────────────┘
                             │
              ┌──────────────┴──────────────┐
@@ -66,8 +74,9 @@ SanitX combines deterministic PDF analysis with semantic AI analysis to identify
                     ┌─────────────┐
                     │   Frontend  │
                     │             │
-                    │ 🟢 Accepted │
-                    │ 🔴 Rejected │
+                    │ 🟢 Verified │
+                    │ 🟡 Review   │
+                    │ 🔴 Blocked  │
                     └─────────────┘
 ```
 
@@ -77,48 +86,45 @@ SanitX combines deterministic PDF analysis with semantic AI analysis to identify
 
 ### Layer 1 — Deterministic Analysis
 
-Layer 1 uses **PyMuPDF** to inspect the PDF at a low level.
+Layer 1 inspects the raw document at a low level based on its file type. It does not make the final security decision; it produces evidence for Layer 2 and neutralizes active executable content before handing it over.
 
-It currently looks for suspicious characteristics such as:
-
-* Extremely small text
+#### PDF Analysis (via PyMuPDF)
+It parses the visual pixel and text layers to detect suspicious characteristics:
+* Extremely small text (e.g., under 2.0pt)
 * Text with very low contrast against its local background
 * Text positioned unusually close to the page border
-* Potentially dangerous SQL queries
+* Dangerous embedded SQL queries
+* **Sanitization (P0-7 fix):** Strips active content including `/JavaScript`, `/OpenAction`, executable annotations, and XFA streams.
 
-When suspicious text is detected, SanitX records its:
+#### Markdown/HTML Analysis (Heuristic Scan)
+It parses the raw source text to identify hidden instructions invisible to human readers but visible to LLMs:
+* Invisible or zero-width Unicode characters
+* HTML comments (`&lt;!-- --&gt;`)
+* Inline CSS hiding text (`display: none`, `opacity: 0`)
+* Raw active HTML tags (`&lt;script&gt;`, `&lt;iframe&gt;`, `&lt;meta&gt;`)
+* Suspicious URI schemes (`javascript:`, `data:`)
+* **Sanitization:** Neutralizes executable HTML tags and script-executing URIs.
 
-* Page number
-* Bounding-box coordinates
-* Detection reason
-
-Suspicious regions are also highlighted in a modified copy of the PDF.
-
-The important distinction is that **Layer 1 does not make the final security decision**.
-
-It produces evidence for Layer 2.
+When suspicious text is detected in either format, SanitX records its precise location (bounding box or line number) and the detection reason, passing this as structured evidence.
 
 ---
 
 ### Layer 2 — Semantic Analysis
 
-The modified PDF, suspicious-region coordinates, and dangerous SQL-query list are passed to **Gemini** through its REST API.
+The sanitized document, suspicious-region coordinates, and dangerous SQL-query list are passed to **Gemini** through its REST API.
 
 Layer 2 analyzes the document semantically and determines whether the suspicious content actually represents a prompt injection.
 
 It considers:
 
-* The document's overall context
-* The purpose of the document
+* The document's legitimate context and purpose
 * Text surrounding suspicious regions
 * Hidden or obfuscated instructions
-* Direct AI manipulation attempts
+* Direct AI manipulation attempts (e.g., overriding instructions)
 * Indirect prompt injection
-* Attempts to override instructions
-* Attempts to extract sensitive information
-* Attempts to execute SQL, code, or external actions
-* Multi-region and multi-page attacks
-* Legitimate content that could otherwise produce false positives
+* Attempts to extract sensitive information or execute unauthorized code/SQL
+* Multi-region and multi-page distributed attacks
+* Legitimate content that could otherwise produce false positives (e.g., a SQL tutorial vs. a malicious SQL injection attempt)
 
 Layer 2 ultimately produces a structured security decision:
 
@@ -145,8 +151,8 @@ Tiny text
 
 could be:
 
-* malicious hidden instructions, or
-* a legitimate footnote.
+* malicious hidden instructions targeting an LLM, or
+* a legitimate legal footnote.
 
 Likewise:
 
@@ -171,7 +177,7 @@ Semantic reasoning
 Final security decision
 ```
 
-This separation allows SanitX to combine **precise low-level PDF inspection** with **context-aware semantic analysis**.
+This separation allows SanitX to combine **precise low-level inspection** with **context-aware semantic analysis**.
 
 ---
 
@@ -179,7 +185,7 @@ This separation allows SanitX to combine **precise low-level PDF inspection** wi
 
 SanitX follows an important principle:
 
-> **The PDF is data, not instructions.**
+> **The document is data, not instructions.**
 
 Everything extracted from the document is considered untrusted.
 
@@ -194,45 +200,46 @@ This includes:
 * Hidden content
 * Instructions directed at AI systems
 
-Gemini is instructed to **analyze** these elements rather than follow them.
+Gemini is instructed to **analyze** these elements rather than follow them. The pipeline ensures active content is neutralized *before* Layer 2 ever sees the document.
 
 ---
 
 ## Tech Stack
 
 ### Backend
-
 * Python
-* FastAPI
-* PyMuPDF
+* FastAPI (API router)
+* PyMuPDF (PDF structural & visual analysis)
 * HTTPX
 * Google Gemini REST API
 * python-dotenv
 
-### Frontend
+### Frontend (`/web`)
+* Next.js (React 19, TypeScript)
+* Tailwind CSS
+* GSAP (Scrollytelling and pipeline visualization animations)
+* Vitest (Frontend testing)
 
-* Web-based PDF upload interface
-* Visual ACCEPT / REJECT feedback
-* Suspicious-content explanation
+The frontend is designed with two distinct zones: a narrative scrollytelling introduction ("The Reveal") that visually demonstrates prompt injection, and a dense, fast instrument view ("The Instrument") for security engineers evaluating the tool's output.
 
 ---
 
 ## Current Pipeline
 
 ```text
-Upload PDF
+Upload PDF / Markdown
    ↓
 FastAPI
    ↓
-Layer 1 — PyMuPDF
+Layer 1 — PyMuPDF / Heuristic Scan
    ↓
-Highlight suspicious content
+Highlight / identify suspicious content
    ↓
-Collect suspicious coordinates
+Collect suspicious coordinates & lines
    ↓
 Collect dangerous SQL queries
    ↓
-Create edited PDF
+Create edited document 
    ↓
 Layer 2 — Gemini
    ↓
@@ -247,31 +254,18 @@ Frontend
 
 ## Project Goals
 
-SanitX is being developed toward a production-oriented PDF security pipeline capable of detecting prompt injection attacks that may otherwise be invisible to users.
+SanitX is being developed toward a production-oriented document security pipeline capable of detecting prompt injection attacks that may otherwise be invisible to users.
 
 The long-term goal is to make AI document processing safer by providing a security layer between:
 
 ```text
-Untrusted Documents
-        ↓
-     SanitX
-        ↓
-    AI Systems
+Untrusted Documents (PDF/Markdown)
+         ↓
+      SanitX
+         ↓
+     AI Systems
 ```
 
 ---
 
-## Status
-
-🚧 **Currently under active development**
-
-The core two-layer inspection architecture is being implemented.
-
-Current focus:
-
-* PDF-level suspicious content detection
-* Suspicious-region tracking
-* SQL query analysis
-* Gemini semantic analysis
-* Structured security decisions
-* Frontend visualization
+ 
