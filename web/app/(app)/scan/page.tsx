@@ -11,11 +11,12 @@ import { SAMPLE_ORDER, type SampleId } from "@/lib/fixtures/scans";
 
 export const metadata: Metadata = {
   title: "Scan",
-  description: "Scan a PDF for hidden prompt injections.",
+  description:
+    "Scan a PDF or Markdown document for hidden prompt injections.",
 };
 
 /** The hero's second CTA is /scan?sample=malicious (§5.0) — a first-time
-    visitor reaches a real verdict without possessing a malicious PDF. An
+    visitor reaches a real verdict without possessing a malicious document. An
     unrecognised value is ignored rather than erroring: a bad query string is
     not worth a broken page. */
 function parseSample(value: string | string[] | undefined): SampleId | null {

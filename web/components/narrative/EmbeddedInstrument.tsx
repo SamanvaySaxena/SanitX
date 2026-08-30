@@ -37,7 +37,7 @@ export function EmbeddedInstrument() {
         <p className="embed-lede about-document">
           The scanner below is the same component <code>/scan</code> serves,
           pre-loaded with a malicious sample so you reach a real verdict
-          without having to own a malicious PDF. Press{" "}
+          without having to own a malicious document. Press{" "}
           <kbd className="embed-kbd from-document">?</kbd> for the shortcuts,
           or start a new scan to drop in a file of your own.
         </p>

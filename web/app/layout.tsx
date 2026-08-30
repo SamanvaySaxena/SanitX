@@ -10,16 +10,18 @@ import "@/styles/globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://sanitx.local"),
   title: {
-    default: "SanitX — scans PDFs for hidden prompt injections",
+    default: "SanitX — scans PDFs and Markdown for hidden prompt injections",
     template: "%s · SanitX",
   },
-  // §3.6 register: capability, countable, no scare.
+  // §3.6 register: capability, countable, no scare. The count stays a claim
+  // about PDFs, because it is one — lib/vectors.ts is the PDF taxonomy, and
+  // Markdown support added detectors rather than changing that number.
   description:
-    "SanitX scans PDFs for hidden prompt injections. Ten ways a PDF can hide an instruction — we check for all of them.",
+    "SanitX scans PDFs and Markdown for hidden prompt injections. Ten ways a PDF can hide an instruction — we check for all of them.",
   openGraph: {
-    title: "SanitX — scans PDFs for hidden prompt injections",
+    title: "SanitX — scans PDFs and Markdown for hidden prompt injections",
     description:
-      "Ten ways a PDF can hide an instruction. We check for all of them.",
+      "SanitX scans PDFs and Markdown for hidden prompt injections. Ten ways a PDF can hide an instruction — we check for all of them.",
     type: "website",
   },
   robots: { index: true, follow: true },
@@ -36,26 +38,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    /* §7.2 — no data-motion attribute is rendered here. The default IS the
-       operating system's answer, and only the visitor's own choice in
-       components/primitives/MotionToggle.tsx ever overrides it. The script
-       below restores that choice before first paint. */
     <html
       lang="en"
       className={`${GeistSans.variable} ${GeistMono.variable}`}
       suppressHydrationWarning
     >
       <head>
-        {/* Runs before the body paints, so a scene never builds a timeline
-            against the wrong preference and then tears it down — which would
-            be a pinned frame flashing at exactly the visitor who asked not to
-            see one. Wrapped because a blocked localStorage must degrade to
-            "follow the system", not to a broken page. */}
+        {/* ---------------------------------------------------------------
+            TEMPORARY — Figma capture bridge (design handoff only).
+
+            Loads Figma's html-to-design capture script, which exposes an
+            in-browser toolbar for pushing a section of this page into the
+            Figma file. It is NOT part of the product: it is a third-party
+            script on the critical path and must be deleted before any
+            deploy. Tracked for removal — see the note in the PR/commit.
+            --------------------------------------------------------------- */}
         <script
-          id="sanitx-motion-preference"
-          dangerouslySetInnerHTML={{
-            __html: `try{var m=localStorage.getItem("sanitx.motion");if(m==="full"||m==="reduced")document.documentElement.dataset.motion=m}catch(e){}`,
-          }}
+          src="https://mcp.figma.com/mcp/html-to-design/capture.js"
+          async
         />
       </head>
       <body className="bg-[var(--bg-base)] text-[var(--text-mid)] antialiased">

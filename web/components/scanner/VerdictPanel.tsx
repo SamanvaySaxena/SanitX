@@ -32,6 +32,7 @@ import * as React from "react";
 import { Meter, VerdictBadge } from "@/components/primitives/Meter";
 import { Button } from "@/components/primitives/Button";
 import { DivergencePanel } from "./DivergencePanel";
+import { KIND_LABELS } from "@/lib/api";
 import {
   DEFAULT_WEIGHTS,
   PROFILES,
@@ -278,7 +279,12 @@ export function VerdictPanel({
         <h3 className="sx-label">Export</h3>
         <div className="sx-exports">
           <PendingExport label="Cleaned corpus" />
-          <PendingExport label="Redacted PDF" />
+          {/* Named for the document actually scanned. A Markdown scan
+              offering a "Redacted PDF" would promise an artefact the
+              pipeline has no way to produce. */}
+          <PendingExport
+            label={`Redacted ${KIND_LABELS[response?.document.kind ?? "pdf"]}`}
+          />
           <span
             className="sx-tip"
             data-tip={

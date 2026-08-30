@@ -27,8 +27,7 @@
 
    So: hard rule, grid off, tool section begins. If the morph is picked up
    later it belongs in a client component wrapping Act 5's meter and Act 7's
-   verdict panel, gated on the reduced-motion guard in lib/motion, and it must
-   not block Act 7's first paint.
+   verdict panel, and it must not block Act 7's first paint.
    ---------------------------------------------------------------------------
 
    Zero JavaScript: server component, no state, no animation library. The

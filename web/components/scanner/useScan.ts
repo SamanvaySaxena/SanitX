@@ -94,6 +94,13 @@ export interface ScanState {
   document: DocumentMeta | null;
   /** Name of the local file when a real upload is in play (§6.3 precheck). */
   uploadName: string | null;
+  /** The document itself, when the run has one — an upload, or a sample
+      fetched from the backend. The page preview rasterises it (§6.1), so it
+      has to live in state rather than in a ref: a ref would not re-render the
+      preview when the file lands, and the pane would keep showing the
+      synthetic surface for a document it actually has. Null in demo mode,
+      where there is genuinely no file. */
+  file: File | null;
   phases: Phase[];
   findings: Finding[];
   divergence: Divergence | null;
@@ -107,6 +114,7 @@ const INITIAL: ScanState = {
   sample: null,
   document: null,
   uploadName: null,
+  file: null,
   phases: seedPhases(),
   findings: [],
   divergence: null,
@@ -116,7 +124,12 @@ const INITIAL: ScanState = {
 };
 
 type Action =
-  | { kind: "start"; sample: SampleId; uploadName: string | null }
+  | {
+      kind: "start";
+      sample: SampleId;
+      uploadName: string | null;
+      file: File | null;
+    }
   | { kind: "event"; event: ScanEvent }
   | { kind: "settle" }
   | { kind: "cancel" }
@@ -195,6 +208,7 @@ function reduce(state: ScanState, action: Action): ScanState {
         status: "scanning",
         sample: action.sample,
         uploadName: action.uploadName,
+        file: action.file,
       };
 
     case "event":
@@ -288,7 +302,7 @@ export function useScan(stream?: ScanStreamFactory): UseScanResult {
       abortRef.current = controller;
       const run = ++runRef.current;
 
-      dispatch({ kind: "start", sample, uploadName });
+      dispatch({ kind: "start", sample, uploadName, file: file ?? null });
 
       const factory = streamRef.current ?? defaultStream;
       const live = () => run === runRef.current && !controller.signal.aborted;

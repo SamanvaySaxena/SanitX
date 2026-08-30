@@ -199,6 +199,7 @@ export function PipelineScroller() {
                   {scene >= 2 && (
                     <PageViewer
                       filename={doc.filename}
+                      kind={doc.kind}
                       pages={doc.pages}
                       page={1}
                       onPageChange={() => {}}

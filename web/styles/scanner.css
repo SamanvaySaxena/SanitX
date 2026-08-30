@@ -310,9 +310,11 @@
 }
 
 /* =========================================================================
-   Page preview — §6.1 pane 1. In demo mode this is a synthetic paper page in
-   the PDF's own 612x792 user space; PageViewer.tsx carries the commented
-   seam where the lazy `import("pdfjs-dist")` goes (§9.1).
+   Page preview — §6.1 pane 1. With a real file in play this is the scanned
+   page itself, rasterised by PDF.js (lib/pdf/render.ts, lazily imported per
+   §9.1). With no file — demo mode, or a document the renderer refused — it is
+   a synthetic paper page, labelled as one. Both occupy the PDF's own 612x792
+   user space, which is the coordinate space the bboxes are expressed in.
    ========================================================================= */
 
 .sx-page-wrap {
@@ -328,11 +330,42 @@
   aspect-ratio: 612 / 792;
 }
 
+/* Markdown is not paper. There are no 612x792 coordinates to preserve and no
+   page to fit, so the surface is a fixed-height scrolling well instead —
+   forcing a letter aspect ratio on a source file would waste most of the pane
+   on whichever end of the document happened to be short. */
+.sx-page[data-kind="markdown"] {
+  aspect-ratio: auto;
+  height: min(72vh, 780px);
+}
+
 .sx-page-surface {
   position: absolute;
   inset: 0;
   overflow: hidden;
   padding: 7.5% 9%;
+}
+
+/* The real page carries no padding: the raster IS the page, edge to edge. */
+.sx-page-surface[data-surface="document"] {
+  padding: 0;
+  background: #fff;
+}
+
+/* Stretched to fill the 612:792 box on purpose, NOT object-fit: contain.
+   pipeline.py#_rescale_bbox normalises every bbox with a non-uniform
+   612/width x 792/height scale, so the only surface those percentages land on
+   correctly is one carrying the same transform. See lib/pdf/render.ts. */
+.sx-page-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Until the first raster lands the canvas is a blank 0x0 element, which would
+   flash the dark app ground through the paper. Hold white. */
+.sx-page-canvas[data-status="loading"] {
+  background: #fff;
 }
 
 .sx-paper-head {
@@ -374,6 +407,123 @@
   border-radius: 1px;
   opacity: 0.12;
   height: 18%;
+}
+
+/* =========================================================================
+   The Markdown surface — the source, not its rendering. See MarkdownPage.tsx
+   for why: rendering the Markdown would hide precisely the lines the scan
+   flagged. Every flagged line is marked with colour AND a left rule, so the
+   marking survives the same way §3.2 law 2 requires everywhere else — never
+   colour alone.
+   ========================================================================= */
+
+.sx-md-surface {
+  padding: var(--s-3) 0;
+  overflow: auto;
+  background: var(--paper);
+}
+
+.sx-md-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.sx-md-line {
+  position: relative;
+  display: flex;
+  gap: var(--s-3);
+  padding: 0 var(--s-4) 0 0;
+  /* Held on every row, coloured only on flagged ones, so a flagged line does
+     not shift its text sideways relative to its neighbours. */
+  border-left: 2px solid transparent;
+  color: var(--paper-ink);
+}
+
+.sx-md-gutter {
+  flex: 0 0 auto;
+  min-width: 3.5ch;
+  padding-left: var(--s-3);
+  text-align: right;
+  color: var(--paper-ink);
+  opacity: 0.35;
+  user-select: none;
+}
+
+.sx-md-text {
+  flex: 1 1 auto;
+  /* Source is source: it wraps rather than scrolling sideways, but it never
+     collapses runs of spaces, because the indentation is part of what is
+     being inspected. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.sx-md-line[data-flagged="true"] {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-left-color: var(--accent);
+}
+
+.sx-md-line[data-tone="blocked"] {
+  background: color-mix(in srgb, var(--blocked) 14%, transparent);
+  border-left-color: var(--blocked);
+}
+
+.sx-md-line[data-tone="review"] {
+  background: color-mix(in srgb, var(--review) 14%, transparent);
+  border-left-color: var(--review);
+}
+
+.sx-md-line[data-selected="true"] {
+  border-left-width: 3px;
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+.sx-md-line[data-selected="true"][data-tone="blocked"] {
+  background: color-mix(in srgb, var(--blocked) 28%, transparent);
+}
+
+.sx-md-line[data-selected="true"][data-tone="review"] {
+  background: color-mix(in srgb, var(--review) 28%, transparent);
+}
+
+/* Exactly one pulse, exactly 120ms, exactly the Snap curve (§4.2) — the same
+   contract .sx-bbox[data-pulse] keeps on the PDF surface. */
+.sx-md-line[data-pulse="true"] {
+  animation: sx-md-line-pulse var(--t-snap) var(--e-snap) 1;
+}
+
+@keyframes sx-md-line-pulse {
+  from {
+    filter: brightness(1.6);
+  }
+  to {
+    filter: brightness(1);
+  }
+}
+
+.sx-md-tag {
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 0 3px;
+  border-radius: 1px;
+  background: var(--accent);
+  color: var(--bg-void);
+  font-size: 9px;
+  line-height: 14px;
+  white-space: nowrap;
+}
+
+.sx-md-truncation {
+  position: sticky;
+  bottom: 0;
+  margin: 0;
+  padding: var(--s-2) var(--s-4);
+  background: var(--paper);
+  color: var(--paper-ink);
+  opacity: 0.7;
 }
 
 .sx-pager {

@@ -1,7 +1,6 @@
 import "@/styles/narrative.css";
 import { ScrollRail } from "@/components/narrative/ScrollRail";
 import { SkipToScanner } from "@/components/narrative/SkipToScanner";
-import { MotionToggle } from "@/components/primitives/MotionToggle";
 
 /**
  * Zone A — the narrative site (§1.3).
@@ -25,10 +24,6 @@ export default function MarketingLayout({
     <>
       <ScrollRail />
       <SkipToScanner />
-      {/* §7.2 — the motion preference, early in the tab order because a
-          visitor who wants less motion needs it BEFORE six pinned acts, not
-          in a footer under them. Zone A only: /scan animates nothing. */}
-      <MotionToggle />
       <main id="main">{children}</main>
     </>
   );

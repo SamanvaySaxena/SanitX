@@ -59,10 +59,18 @@ def _line_lists(spans: list[TextSpan]) -> tuple[list[str], list[str]]:
             continue
         extracted.setdefault(key, []).append(text)
         hidden_reasons = {
+            # PDF: hidden by ink, size or paint order.
             "small_text",
             "low_contrast",
             "z_order_occlusion",
             "unicode_obfuscation",
+            # Markdown: hidden by the renderer. An HTML comment or a
+            # display:none span never reaches the reader's eye but is fully
+            # present in the source an LLM ingests — the same
+            # rendered/extracted split, one layer up.
+            "hidden_html_comment",
+            "hidden_css_style",
+            "active_html_embed",
         }
         if not hidden_reasons.intersection(span.reasons):
             rendered.setdefault(key, []).append(text)

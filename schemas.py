@@ -27,7 +27,15 @@ VectorId = Literal[
     "low_contrast",
     "near_border",
     "semantic_injection",
+    # Markdown vectors. The Markdown source has no glyphs to measure, so the
+    # hiding techniques differ in kind, not just in coordinates: text is
+    # concealed by the *renderer* (comments, CSS) rather than by ink.
+    "hidden_html_comment",
+    "hidden_css_style",
+    "active_html_embed",
+    "suspicious_uri",
 ]
+DocumentKind = Literal["pdf", "markdown"]
 PhaseId = Literal[1, 2, 3, 4, 5, 6]
 PhaseStatus = Literal["pending", "running", "complete", "failed"]
 
@@ -48,6 +56,9 @@ class Finding(Base):
     score: float
     page: int
     bbox: BBox | None
+    # Markdown findings anchor to a 1-based source line instead of a bbox;
+    # PDF findings leave this null and anchor to `bbox`.
+    line: int | None = None
     snippet: str | None
     reason_codes: list[str]
     mitre: str | None
@@ -93,9 +104,16 @@ class Weights(Base):
 
 class DocumentMeta(Base):
     filename: str
+    # Which pipeline produced this scan. The preview pane renders a page
+    # raster for "pdf" and the annotated source for "markdown", so it has to
+    # come from the response rather than be re-guessed from the filename.
+    kind: DocumentKind = "pdf"
     pages: int
     bytes: int
     sha256: str
+    # Markdown only: total source lines. Null for PDFs, where `pages` is the
+    # unit of navigation.
+    lines: int | None = None
 
 
 class ScanResponse(Base):
@@ -153,6 +171,8 @@ class ErrorEvent(Base):
 class SemanticEvidence(Base):
     page: int | None = None
     bbox: list[float] | None = None
+    # Markdown evidence anchors to a source line instead of a bbox.
+    line: int | None = None
     description: str = ""
     snippet: str | None = None
 

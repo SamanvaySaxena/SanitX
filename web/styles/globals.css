@@ -119,47 +119,16 @@
 }
 
 /* =========================================================================
-   Reduced motion (§7.2) — the content test.
-   This block only removes MOTION. Every scene's static composition is
-   authored to carry the same argument on its own; the guard in
-   lib/motion/reduced-motion.ts additionally prevents ScrollTrigger
-   instances from ever being created, so the pin cost is never paid.
+   Motion (§7.2) — no global kill-switch.
+   -------------------------------------------------------------------------
+   There is deliberately no `@media (prefers-reduced-motion: reduce)` block
+   flattening every duration here. Windows reports that query for its taskbar
+   "Animation effects: off" setting, which silently stripped the site's
+   transitions from a large group of visitors who had asked for nothing of the
+   sort. §7.2's content test is met by composition instead: every act reads
+   correctly at any single frame, and the scrolled scenes are scrubbed, so
+   nothing on the page moves except under the visitor's own scroll.
    ========================================================================= */
-/* Two rules, one meaning: "this visitor wants less motion".
-
-   The first honours the OS, unless the visitor has explicitly chosen Full in
-   the motion toggle (§7.2) — Windows' "Animation effects: off" is a taskbar
-   setting for a lot of people, and :not([data-motion="full"]) is how they say
-   so without us guessing on their behalf.
-
-   The second honours a visitor who chose Reduced while their OS says nothing.
-
-   Neither hides content. §7.2's content test is that every act's argument
-   survives motion being removed, which is a property of the static
-   composition, not of this block. */
-@media (prefers-reduced-motion: reduce) {
-  :root:not([data-motion="full"]) *,
-  :root:not([data-motion="full"]) *::before,
-  :root:not([data-motion="full"]) *::after {
-    animation-duration: 1ms !important;
-    animation-delay: 0ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
-    transition-delay: 0ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-:root[data-motion="reduced"] *,
-:root[data-motion="reduced"] *::before,
-:root[data-motion="reduced"] *::after {
-  animation-duration: 1ms !important;
-  animation-delay: 0ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 1ms !important;
-  transition-delay: 0ms !important;
-  scroll-behavior: auto !important;
-}
 
 /* =========================================================================
    Skip links (§7.3) — the first two tab stops on every page. Visually
@@ -278,7 +247,6 @@
 
 /* Everything below runs only once .hero-armed is present. The server renders
    it, so the sweep plays on load; the replay control removes and re-adds it. */
-/* Hero animations now run unconditionally (reduced-motion guard removed). */
 .hero-armed .hero-mask-rect {
   animation: hero-sweep 1400ms linear 600ms both;
 }
@@ -328,9 +296,10 @@
 
 /* --- The static fallback (§5.0) ---------------------------------------
    "the seven-word line, the headline, and the end state — payloads visible,
-   brackets and labels present, no sweep." A reduced-motion visitor loses the
-   sweep and nothing else. This is also the no-JS and no-CSS-animation state,
-   which is why it is expressed as the DEFAULT rather than as an override. */
+   brackets and labels present, no sweep." This is the no-JS and
+   no-CSS-animation state, which is why it is expressed as the DEFAULT rather
+   than as an override: the sweep is what gets added, never what gets taken
+   away, so the hero's argument stands at any frame of it. */
 .hero-figure .hero-mask-rect {
   transform: translateY(792px);
 }

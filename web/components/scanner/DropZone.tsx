@@ -9,8 +9,8 @@
    §6.3 is implemented in full, in order, before anything leaves the browser:
      - size / MIME checked against the SAME constants the API enforces, and
        the refusal names the actual limit — "never after a 40-second upload"
-     - the magic header is verified client-side, so a .pdf that is not a PDF
-       is caught here rather than by the parser
+     - the bytes are verified client-side, so a .pdf that is not a PDF — or a
+       .md that is really a binary — is caught here rather than by the parser
 
    The refusal is a persistent region, not a toast. A message that vanishes is
    one you cannot re-read while you fix the file, and §6.3 bans the generic
@@ -18,7 +18,13 @@
    ========================================================================= */
 
 import * as React from "react";
-import { LIMITS, formatBytes, precheckFile, verifyMagicHeader } from "@/lib/api";
+import {
+  ACCEPT_ATTRIBUTE,
+  LIMITS,
+  formatBytes,
+  precheckFile,
+  verifyMagicHeader,
+} from "@/lib/api";
 import {
   SAMPLES,
   SAMPLE_LABELS,
@@ -90,7 +96,7 @@ export function DropZone({ onSample, onAccept, disabled = false }: DropZoneProps
             id="sx-file"
             className="sx-file-input"
             type="file"
-            accept="application/pdf,.pdf"
+            accept={ACCEPT_ATTRIBUTE}
             disabled={disabled}
             aria-describedby="sx-caps"
             onChange={(e) => {
@@ -99,25 +105,37 @@ export function DropZone({ onSample, onAccept, disabled = false }: DropZoneProps
             }}
           />
           <label htmlFor="sx-file" className="sx-dropzone-title about-document">
-            Choose a PDF, or drop one here
+            Choose a PDF or Markdown file, or drop one here
           </label>
 
           {/* §6.5 — the caps are stated BEFORE upload. This list is the whole
-              point of the empty state, so it is not a tooltip or a footnote. */}
+              point of the empty state, so it is not a tooltip or a footnote.
+              Both kinds are named with the check each actually gets: a PDF has
+              a magic header to verify, Markdown does not, and claiming
+              otherwise would be a promise the drop zone cannot keep. */}
           <ul className="sx-caps about-document" id="sx-caps">
             <li>
-              PDF only — <span className="from-document">%PDF-</span> header
-              verified in your browser
+              PDF — <span className="from-document">%PDF-</span> header verified
+              in your browser
+            </li>
+            <li>
+              Markdown —{" "}
+              <span className="from-document">.md .markdown .mdown .mkd</span>,
+              checked for binary content
             </li>
             <li>
               Up to <span className="from-document tabular">{formatBytes(LIMITS.maxBytes)}</span>
             </li>
             <li>
-              Up to <span className="from-document tabular">{LIMITS.maxPages}</span> pages
+              Up to <span className="from-document tabular">{LIMITS.maxPages}</span> pages, or{" "}
+              <span className="from-document tabular">
+                {LIMITS.maxLines.toLocaleString()}
+              </span>{" "}
+              lines
             </li>
           </ul>
           <p className="sx-note about-document">
-            Nothing is uploaded until these three checks pass.
+            Nothing is uploaded until the type, size and content checks pass.
           </p>
         </div>
 
@@ -168,7 +186,7 @@ export function DropZone({ onSample, onAccept, disabled = false }: DropZoneProps
         <p className="sx-note about-document">
           Each sample is a complete, hand-authored fixture response — the same
           shape the API returns. Loading one reaches a real verdict without
-          possessing a malicious PDF.
+          possessing a malicious document.
         </p>
       </div>
     </div>

@@ -157,4 +157,13 @@ export const DETECTOR_NAMES: Partial<Record<VectorId, string>> = {
   low_contrast: "Low contrast",
   near_border: "Near page border",
   semantic_injection: "Semantic injection",
+  /* Markdown detectors. Deliberately absent from VECTORS above: that array is
+     the PDF taxonomy Act 4 walks through, and padding it with Markdown
+     vectors would change the "ten ways a PDF can hide an instruction" count
+     the hero states. They are named here so a finding renders with a real
+     name rather than its raw id. */
+  hidden_html_comment: "Hidden HTML comment",
+  hidden_css_style: "Hidden by CSS",
+  active_html_embed: "Active HTML embed",
+  suspicious_uri: "Suspicious URI scheme",
 };

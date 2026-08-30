@@ -47,7 +47,7 @@ import { PageViewer } from "./PageViewer";
 import { PhaseLedger } from "./PhaseLedger";
 import { VerdictPanel } from "./VerdictPanel";
 import { scanToJson, useScan, type ScanStreamFactory } from "./useScan";
-import { fetchSampleFile, formatBytes, isDemoMode } from "@/lib/api";
+import { detectKind, fetchSampleFile, formatBytes, isDemoMode } from "@/lib/api";
 import { SAMPLE_LABELS, SAMPLE_ORDER, type SampleId } from "@/lib/fixtures/scans";
 
 export interface ScannerProps {
@@ -94,14 +94,6 @@ export function Scanner({
     },
     [start],
   );
-
-  /* ---- Auto-start from the URL / the Act 7 embed. Runs once. --------- */
-  const started = React.useRef(false);
-  React.useEffect(() => {
-    if (started.current || !initialSample) return;
-    started.current = true;
-    beginScan(initialSample);
-  }, [initialSample, beginScan]);
 
   /* ---- §7.3: "the count announced on scan completion", once. A live
          region that fires per frame is unusable, so this is the ONLY place
@@ -184,14 +176,33 @@ export function Scanner({
         return;
       }
       try {
+        // The bytes, not just the verdict. §6.1's preview rasterises this
+        // file, so fetching it is what makes the boxes land on real glyphs
+        // instead of on a greeked stand-in.
         const file = await fetchSampleFile(id);
         beginScan(id, file.name, file);
       } catch {
+        // Backend unreachable. Fall back to the fixture replay, which draws
+        // the synthetic surface and says so — never a blank pane.
         beginScan(id);
       }
     },
     [beginScan],
   );
+
+  /* ---- Auto-start from the URL / the Act 7 embed. Runs once. ---------
+     Routed through `scanSample` rather than `beginScan` so the pre-loaded
+     sample arrives as a real FILE. Act 7 promises "the same component /scan
+     serves"; a preview that could only ever show a stand-in page would not
+     be that, and §5.9's whole argument is that the embed has to be the
+     product. Demo mode and an unreachable backend both degrade inside
+     `scanSample`, so this stays a single call. */
+  const started = React.useRef(false);
+  React.useEffect(() => {
+    if (started.current || !initialSample) return;
+    started.current = true;
+    void scanSample(initialSample);
+  }, [initialSample, scanSample]);
 
   /* ---- §6.4, the whole table. One handler, on the document, so the
          shortcuts work wherever focus sits inside the tool. ------------ */
@@ -372,6 +383,11 @@ export function Scanner({
           <section className="sx-pane" aria-label="Page preview">
             <PageViewer
               filename={doc?.filename ?? scan.uploadName ?? "document.pdf"}
+              /* The response is authoritative. Before it lands, the local
+                 file's own name is the best evidence available — guessing
+                 wrong for one frame shows the wrong surface, so it is worth
+                 asking the file rather than defaulting to PDF. */
+              kind={doc?.kind ?? (scan.file ? detectKind(scan.file) : "pdf")}
               pages={doc?.pages ?? 1}
               page={page}
               onPageChange={setPage}
@@ -379,6 +395,7 @@ export function Scanner({
               selectedId={selectedId}
               pulseKey={pulseKey}
               demo={demo}
+              file={scan.file}
             />
           </section>
 

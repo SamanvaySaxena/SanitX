@@ -6,7 +6,7 @@ import { ResumePage } from "./ResumePage";
 /* =========================================================================
    Act 0 — the reveal (§5.0). The most important four seconds on the site.
    -------------------------------------------------------------------------
-   This is a SERVER component. The seven-word line, the paper, the payload
+   This is a SERVER component. The always-on line, the paper, the payload
    layer, the labels and the headline are all in the initial HTML, and the
    entire choreography is CSS keyframes in styles/globals.css. §8: "Nothing in
    Act 0 waits on JavaScript — if GSAP fails to load, the hero still shows the
@@ -16,8 +16,9 @@ import { ResumePage } from "./ResumePage";
    original withheld all explanation for 2300ms and then led with a threat
    framing. Both are things the best sites in this category have stopped
    doing. The reveal is unchanged — it is demonstration, not fear — but a
-   plain seven-word statement is now present from the first frame, and the
-   headline states a capability with a countable claim.
+   plain one-sentence statement of what SanitX takes and what it looks for is
+   now present from the first frame, and the headline states a capability with
+   a countable claim.
    ========================================================================= */
 
 export function HeroReveal() {
@@ -39,11 +40,13 @@ export function HeroReveal() {
             --------------------------------------------------------------- */}
         <div className="order-2 lg:order-1">
           {/* THE ALWAYS-ON LINE. Present at t=0, never animated, never
-              delayed, legible with JavaScript disabled. Seven words, no
-              metaphor, no scare. §5.0 calls this non-negotiable: a visitor
-              who lands and leaves in two seconds still knows what this is. */}
+              delayed, legible with JavaScript disabled. One plain sentence,
+              no metaphor, no scare — and it names both accepted formats, so
+              the claim matches what the drop zone actually takes. §5.0 calls
+              this non-negotiable: a visitor who lands and leaves in two
+              seconds still knows what this is. */}
           <p className="about-document text-[length:var(--lede)] leading-snug text-[var(--text-hi)]">
-            SanitX scans PDFs for hidden prompt injections.
+            SanitX scans PDFs and Markdown for hidden prompt injections.
           </p>
 
           {/* The headline resolves in at 2300ms. It states a capability with
@@ -67,8 +70,10 @@ export function HeroReveal() {
 
           <p className="about-document mt-6 max-w-[62ch] text-[length:var(--lede)] leading-[1.6] text-[var(--text-mid)]">
             Text sized to nothing, coloured to match the page, buried under
-            images, or remapped so the glyphs and the characters disagree.
-            SanitX finds it before the model that would obey it does.
+            images, or remapped so the glyphs and the characters disagree. In
+            Markdown, the same instruction hides in a comment, a CSS-hidden
+            span or an embedded HTML tag. SanitX finds it before the model
+            that would obey it does.
           </p>
 
           {/* §2.5 / §3.6 — the scanner is not behind a signup, and the CTAs
@@ -77,7 +82,7 @@ export function HeroReveal() {
               have to own. */}
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <LinkButton href="/scan" variant="primary">
-              Scan a PDF
+              Scan a document
             </LinkButton>
             <LinkButton href="/scan?sample=malicious" variant="secondary">
               Use a malicious sample <span aria-hidden="true">→</span>

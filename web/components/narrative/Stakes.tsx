@@ -74,7 +74,8 @@ export function Stakes({
             h1 (§7.3); the size token and the heading level are independent. */}
         <h2 id="stakes-heading" className="stakes-line about-document reveal">
           Every RAG pipeline, résumé screener, invoice parser and document agent
-          in production today reads the text layer of a PDF.{" "}
+          in production today reads the text layer of a PDF, or the raw source
+          of a Markdown file.{" "}
           <strong className="stakes-emphasis">None of them read the page.</strong>
         </h2>
 
@@ -111,8 +112,8 @@ export function Stakes({
         <p className="stakes-note about-document reveal">
           Three numbers belong in those slots. They are empty because the
           adversarial corpus they must be measured against does not exist yet —
-          every vector needs a crafted PDF and a benign near-miss twin before a
-          coverage figure means anything. We would rather show the gap than
+          every vector needs a crafted document and a benign near-miss twin
+          before a coverage figure means anything. We would rather show the gap than
           borrow a number.
         </p>
 

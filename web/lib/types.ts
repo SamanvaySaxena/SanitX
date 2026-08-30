@@ -32,7 +32,18 @@ export type VectorId =
   | "small_text"
   | "low_contrast"
   | "near_border"
-  | "semantic_injection";
+  | "semantic_injection"
+  /* Markdown vectors. The source has no glyphs to measure, so the hiding is
+     done by the RENDERER rather than by ink — a comment, a display:none span
+     or a zero-width character is absent from the page and fully present in
+     the text an LLM ingests. Same attack, one layer up. */
+  | "hidden_html_comment"
+  | "hidden_css_style"
+  | "active_html_embed"
+  | "suspicious_uri";
+
+/** Which pipeline produced a scan. Drives which preview surface renders. */
+export type DocumentKind = "pdf" | "markdown";
 
 /** PDF user-space coordinates, origin top-left, as PyMuPDF reports them. */
 export interface BBox {
@@ -53,6 +64,11 @@ export interface Finding {
   score: number;
   page: number;
   bbox: BBox | null;
+  /** Markdown findings anchor to a 1-based SOURCE LINE instead of a bbox;
+      PDF findings leave this null and anchor to `bbox`. Exactly one of the
+      two is set, which is what lets the preview pane highlight either
+      surface from the same finding. */
+  line: number | null;
   /** The offending span, verbatim from the document. Always set in mono. */
   snippet: string | null;
   /** Machine-readable reason codes, e.g. ["RENDER_MODE_3", "OFFPAGE"]. */
@@ -120,9 +136,17 @@ export interface Weights {
 
 export interface DocumentMeta {
   filename: string;
+  /** Which pipeline produced this scan. The preview pane renders a page
+      raster for "pdf" and the annotated source for "markdown", so it comes
+      from the response rather than being re-guessed from the filename. */
+  kind: DocumentKind;
+  /** Always 1 for Markdown, which is one continuous document. */
   pages: number;
   bytes: number;
   sha256: string;
+  /** Markdown only: total source lines. Null for PDFs, where `pages` is the
+      unit of navigation. */
+  lines: number | null;
 }
 
 export interface ScanResponse {

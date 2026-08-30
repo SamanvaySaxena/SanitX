@@ -13,20 +13,26 @@ import { HERO_PAYLOADS } from "@/components/narrative/ResumePage";
 import { VECTOR_COUNT_WORD } from "@/lib/vectors";
 
 describe("the always-on line (§5.0)", () => {
-  it("states what this is in seven words, in the static markup", () => {
+  it("names both accepted formats in one short sentence, in the static markup", () => {
     render(<HeroReveal />);
     const line = screen.getByText(
-      "SanitX scans PDFs for hidden prompt injections.",
+      "SanitX scans PDFs and Markdown for hidden prompt injections.",
     );
     expect(line).toBeInTheDocument();
-    // Seven words. The rule is not negotiable, so it is asserted.
-    expect(line.textContent!.trim().split(/\s+/)).toHaveLength(7);
+    // One sentence, still short enough to read in a glance. The rule §5.0
+    // makes non-negotiable is the brevity, so the length is asserted.
+    expect(
+      line.textContent!.trim().split(/\s+/).length,
+    ).toBeLessThanOrEqual(10);
+    // Both formats the drop zone accepts are named, so Act 0 cannot claim
+    // less than the instrument takes.
+    expect(line.textContent).toMatch(/PDFs and Markdown/);
   });
 
   it("is not animated or delayed — it carries no animation class", () => {
     render(<HeroReveal />);
     const line = screen.getByText(
-      "SanitX scans PDFs for hidden prompt injections.",
+      "SanitX scans PDFs and Markdown for hidden prompt injections.",
     );
     expect(line.className).not.toMatch(/hero-headline|reveal|paint-in/);
   });
@@ -53,10 +59,9 @@ describe("the headline (§5.0)", () => {
 describe("the CTAs (§2.5, §3.6)", () => {
   it("puts the scanner one click away, ungated, with a pre-loaded sample", () => {
     render(<HeroReveal />);
-    expect(screen.getByRole("link", { name: /scan a pdf/i })).toHaveAttribute(
-      "href",
-      "/scan",
-    );
+    expect(
+      screen.getByRole("link", { name: /scan a document/i }),
+    ).toHaveAttribute("href", "/scan");
     expect(
       screen.getByRole("link", { name: /use a malicious sample/i }),
     ).toHaveAttribute("href", "/scan?sample=malicious");
