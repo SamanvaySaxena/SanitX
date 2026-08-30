@@ -184,8 +184,8 @@ export function MarkdownPage({
       </ol>
       {status.kind === "ready" && status.truncated && (
         <p className="sx-md-truncation about-document">
-          Preview truncated at {MAX_PREVIEW_LINES.toLocaleString()} of{" "}
-          {status.lines.toLocaleString()} lines. Every finding is still listed.
+          Preview truncated at {MAX_PREVIEW_LINES.toLocaleString("en-US")} of{" "}
+          {status.lines.toLocaleString("en-US")} lines. Every finding is still listed.
         </p>
       )}
     </div>

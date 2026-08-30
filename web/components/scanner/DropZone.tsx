@@ -129,7 +129,7 @@ export function DropZone({ onSample, onAccept, disabled = false }: DropZoneProps
             <li>
               Up to <span className="from-document tabular">{LIMITS.maxPages}</span> pages, or{" "}
               <span className="from-document tabular">
-                {LIMITS.maxLines.toLocaleString()}
+                {LIMITS.maxLines.toLocaleString("en-US")}
               </span>{" "}
               lines
             </li>
