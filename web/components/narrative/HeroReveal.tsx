@@ -38,15 +38,31 @@ export function HeroReveal() {
         {/* ---------------------------------------------------------------
             The copy column.
             --------------------------------------------------------------- */}
-        <div className="order-2 lg:order-1">
-          {/* THE ALWAYS-ON LINE. Present at t=0, never animated, never
-              delayed, legible with JavaScript disabled. One plain sentence,
-              no metaphor, no scare — and it names both accepted formats, so
-              the claim matches what the drop zone actually takes. §5.0 calls
-              this non-negotiable: a visitor who lands and leaves in two
-              seconds still knows what this is. */}
+        <div className="hero-copy order-2 lg:order-1">
+          {/* THE ALWAYS-ON LINE. In the initial HTML at t=0, never gated on
+              JavaScript. One plain sentence, no metaphor, no scare — and it
+              names both accepted formats, so the claim matches what the drop
+              zone actually takes. §5.0 calls this non-negotiable: a visitor
+              who lands and leaves in two seconds still knows what this is.
+
+              It is typed in over 1.5s, which is a presentation of the line
+              rather than a delay of it: the effect is a clip edge walking
+              across type that is ALREADY in the document. The sentence is a
+              single server-rendered text node — never assembled from
+              per-character spans — so it is in the DOM, in the accessibility
+              tree and in the crawler's copy of the page whether or not the
+              animation ever runs, and the CSS fallback is the finished line,
+              not an empty one. The effect also stands down entirely in a
+              copy column narrow enough to wrap the sentence, since a clip
+              edge across two lines reads as a fault. See the Act 0 block in
+              styles/globals.css. */}
           <p className="about-document text-[length:var(--lede)] leading-snug text-[var(--text-hi)]">
-            SanitX scans PDFs and Markdown for hidden prompt injections.
+            <span className="hero-typeline">
+              <span className="hero-typeline-text">
+                SanitX scans PDFs and Markdown for hidden prompt injections.
+              </span>
+              <span className="hero-typeline-caret" aria-hidden="true" />
+            </span>
           </p>
 
           {/* The headline resolves in at 2300ms. It states a capability with

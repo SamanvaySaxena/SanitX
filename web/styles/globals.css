@@ -318,3 +318,122 @@
   box-shadow: var(--paper-lift);
   overflow: hidden;
 }
+
+/* =========================================================================
+   Act 0 — the always-on line, typed (§5.0).
+   -------------------------------------------------------------------------
+   §5.0 makes one thing non-negotiable about this line: it is present at t=0
+   and it is short enough to read in a glance. Typing it does not change
+   either fact. The sentence is a single text node in the server-rendered
+   HTML — never assembled from per-character spans — so it is in the DOM, in
+   the accessibility tree and in the crawler's copy of the page before any
+   pixel of the effect runs. What the effect adds is a clip edge that walks
+   across type that is already there.
+
+   Two consequences follow, and both are deliberate:
+
+     1. The static fallback is the FINISHED line, not the empty one. The
+        registered property below initialises to 100%, so a browser without
+        @property support, without CSS animation, or mid-paint shows the
+        whole sentence. Same rule as the sweep above: the animation is what
+        gets added, never what gets taken away.
+
+     2. It types only when it cannot wrap. A clip edge walking a two-line
+        block reveals the left half of BOTH lines at once, which reads as a
+        rendering fault rather than as typing. The @container query gates the
+        whole effect on the copy column being wide enough to hold all sixty
+        characters on one line; below that the line simply renders, which is
+        what §5.0 asks for anyway.
+
+   Note there is no prefers-reduced-motion guard here, per the standing
+   decision recorded under "Motion (§7.2)" above. The mitigation is duration:
+   the sentence completes in 1.6s from a cold load.
+   ========================================================================= */
+
+@property --hero-type {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 100%;
+}
+
+/* The copy column is the query container, so the gate below measures the
+   space the sentence actually has rather than guessing at it from the
+   viewport — the right rail is minmax(340px,470px), so viewport width alone
+   does not determine this column's width. */
+.hero-copy {
+  container-type: inline-size;
+  container-name: hero-copy;
+}
+
+/* Default (narrow column, or no container-query support): a plain line. */
+.hero-typeline {
+  display: inline;
+}
+.hero-typeline-caret {
+  display: none;
+}
+
+/* 640px is the gate. The sentence measures ~516px at --lede's 1.125rem floor
+   and ~630px at its 1.375rem ceiling, and the ceiling is only reached in
+   viewports where this column is ~794px wide — so the effect never runs in a
+   column that would wrap it. */
+@container hero-copy (min-width: 640px) {
+  .hero-typeline {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    /* 60 steps, 60 characters. The step is linear in width rather than in
+       glyphs, so proportional type drifts a little against the character
+       grid — which is what a real key-at-a-time cadence looks like. */
+    animation: hero-type 1500ms steps(60, end) 120ms both;
+  }
+
+  /* The clip edge. Only the LEFT inset animates, and it lands on exactly 0 —
+     the element's own border box — so the finished line is never a fraction
+     of a pixel short of itself. Top, right and bottom are bled outward
+     instead, so ascenders, descenders and the final period are not nipped by
+     a rounding error at any frame. */
+  .hero-typeline-text {
+    display: inline-block;
+    clip-path: inset(-0.35em -0.12em -0.35em calc(100% - var(--hero-type)));
+  }
+
+  /* The caret rides the same custom property as the clip edge, so the two
+     cannot drift apart: one value, two readers. It sits OUTSIDE the clipped
+     element, because clip-path clips an element's own pseudo-elements too. */
+  .hero-typeline-caret {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: var(--hero-type);
+    width: 2px;
+    height: 1.05em;
+    transform: translate(-1px, -50%);
+    border-radius: 1px;
+    background: var(--accent);
+    animation:
+      hero-caret-blink 900ms linear infinite,
+      hero-caret-out var(--t-trans) var(--e-trans) 2600ms forwards;
+  }
+}
+
+@keyframes hero-type {
+  from { --hero-type: 0%; }
+  to   { --hero-type: 100%; }
+}
+
+/* Stepped in the keyframes rather than in the timing function: a caret is a
+   square wave, and `steps(1)` on a two-stop opacity ramp never reaches the
+   second stop. */
+@keyframes hero-caret-blink {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* The caret is punctuation for the typing, not a permanent fixture — once the
+   sentence is complete it has nothing left to say, so it leaves. */
+@keyframes hero-caret-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}

@@ -125,6 +125,100 @@
 }
 
 /* -------------------------------------------------------------------------
+   The scrollbars belong to the instrument, not to the operating system.
+
+   The three wells above are the only place in the product where a native
+   scrollbar sits permanently on screen, and Windows draws that bar as a light
+   grey trough with arrow buttons at both ends. Against `--bg-base` it is the
+   brightest object in the pane after the document itself, which inverts §3.1:
+   the page preview is supposed to be the one bright thing, and a chrome
+   widget was outranking it in all three columns.
+
+   So the bar is rebuilt out of the same tokens as everything else it sits
+   beside. The track is transparent — the pane ground shows through, and the
+   scroller reads as an edge of the pane rather than a channel cut into it.
+
+   The thumb is `--line-strong` at rest, not `--line-soft`. Soft is the
+   hairline weight, and a hairline is what this file uses for structure that
+   is merely present; a scrollbar is a control that is always live, which is
+   the case `--line-strong` ("focused, active") already covers for borders
+   here. Hover lifts it to `--text-low`, the dimmest legible foreground in the
+   system — still a token, still monochrome, and still far below the document
+   in brightness, so §3.1 holds. `--accent` is deliberately NOT used: in this
+   file blue means selected or running, and a cursor passing over a scrollbar
+   is neither. Corners, not pills (§3, --r-chip), and the arrow buttons are
+   dropped: they are two more targets nobody uses in a pane you scroll with a
+   wheel.
+
+   The transparent border plus `background-clip: content-box` is what makes a
+   4px rule inside a 10px track. Styling the thumb's width directly would
+   narrow the hit area with it; this keeps the full 10px grabbable and only
+   paints the middle of it.
+
+   Descendant selector on purpose: it covers all three panes in BOTH shells —
+   /scan and Act 7's embed are the same component — plus the wells nested
+   inside them (the Markdown source, the JSON block, the palette list), which
+   would otherwise be the only native bars left in the instrument.
+   ------------------------------------------------------------------------- */
+.sx-root ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.sx-root ::-webkit-scrollbar-track,
+.sx-root ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.sx-root ::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: var(--r-chip);
+  background: var(--line-strong);
+  background-clip: content-box;
+}
+
+.sx-root ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-low);
+  background-clip: content-box;
+}
+
+.sx-root ::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* The Markdown source well is the one scroller in here standing on paper, and
+   a white-based hairline is invisible on it. It gets the ink-side pair
+   instead — `--paper-edge` is the token the page already uses for its own
+   edge against the ground, which is exactly what this bar is. */
+.sx-root .sx-md-surface::-webkit-scrollbar-thumb {
+  background: var(--paper-edge);
+  background-clip: content-box;
+}
+
+.sx-root .sx-md-surface::-webkit-scrollbar-thumb:hover {
+  background: var(--paper-ink);
+  background-clip: content-box;
+}
+
+/* Firefox has no ::-webkit-scrollbar and Chromium ignores those rules the
+   moment `scrollbar-color` is declared, so the standard properties are fenced
+   behind the absence of the pseudo-element rather than declared alongside it.
+   `thin` is the closest the standard gets to the 4px rule above, and the
+   standard properties carry no hover half, so the rest colour is all there
+   is to give. */
+@supports not selector(::-webkit-scrollbar) {
+  .sx-root,
+  .sx-root * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+
+  .sx-root .sx-md-surface {
+    scrollbar-color: var(--paper-edge) transparent;
+  }
+}
+
+/* -------------------------------------------------------------------------
    Three wells, not one long page.
 
    `.sx-pane { overflow-y: auto }` above only means anything if the panes have

@@ -34,7 +34,7 @@ import * as React from "react";
    inside Zone A (§5.7); a route-scoped import would have styled /scan and
    left the embed bare. Next.js dedupes it across both routes. */
 import "@/styles/scanner.css";
-import { Button } from "@/components/primitives/Button";
+import { Button, LinkButton } from "@/components/primitives/Button";
 import { Kbd } from "@/components/primitives/Kbd";
 import {
   CommandPalette,
@@ -336,6 +336,17 @@ export function Scanner({
     <div className="sx-root" data-embedded={embedded || undefined}>
       {/* ---- Header (§6.1) ------------------------------------------- */}
       <header className="sx-header">
+        {/* The way back to Zone A. Act 7 embeds this component INSIDE the
+            narrative site (§5.7), where a "home" link would point at the page
+            it is already on — hence the guard. A plain anchor, not a
+            next/link: §1.3 makes this route group a bundle boundary, and a
+            prefetching link would pull Zone A's animation bundle into Zone B. */}
+        {!embedded && (
+          <LinkButton href="/" variant="ghost" size="sm" className="sx-home">
+            <span aria-hidden="true">&larr;</span>
+            Home
+          </LinkButton>
+        )}
         <span className="sx-wordmark">SanitX</span>
         {doc && (
           <span className="sx-docmeta from-document">
