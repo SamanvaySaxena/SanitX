@@ -53,5 +53,43 @@ dangerous_sql_queries = [
     "DROP MATERIALIZED VIEW {view_name};",
     "DROP DATABASE {database_name};",
     "DROP SCHEMA {schema_name} CASCADE;"
+
+    # --- Unconditional & Destructive Updates ---
+    "UPDATE {table} SET {column} = {value};",
+    "UPDATE {table} SET {column} = NULL;", 
+    "UPDATE {table} SET {column} = (SELECT {other_column} FROM {other_table} WHERE {condition});",
+    "UPDATE {table} SET {column} = DEFAULT;",
+
+    # --- Column and Constraint Removals ---
+    "ALTER TABLE {table} DROP COLUMN {column};",
+    "ALTER TABLE {table} DROP CONSTRAINT {constraint_name};",
+    "ALTER TABLE {table} DROP PRIMARY KEY;",
+    "ALTER TABLE {table} DROP FOREIGN KEY {fk_name};",
+
+    # --- Logic and Component Drops ---
+    "DROP FUNCTION IF EXISTS {function_name};",
+    "DROP PROCEDURE {procedure_name};",
+    "DROP TRIGGER {trigger_name} ON {table};",
+    "DROP INDEX {index_name};",
+    "DROP TABLESPACE {tablespace_name} INCLUDING CONTENTS;",
+
+    # --- Security and Permissions ---
+    "GRANT ALL PRIVILEGES ON *.* TO {user};",
+    "GRANT SUPERUSER TO {user};",
+    "ALTER ROLE {role} WITH SUPERUSER;",
+    "REVOKE ALL PRIVILEGES ON {database} FROM {user};",
+    "DROP USER {user};",
+
+    # --- Engine and OS Level Commands ---
+    "EXEC master..xp_cmdshell '{os_command}';",
+    "COPY {table} FROM PROGRAM '{os_command}';",
+    "SELECT LOAD_FILE('{file_path}');",
+    "SELECT {columns} INTO OUTFILE '{file_path}';",
+    "SHUTDOWN;",
+    "KILL {process_id};",
+    
+    # --- Index/Performance Sabotage ---
+    "ALTER INDEX {index_name} DISABLE;",
+    "ALTER INDEX ALL ON {table} DISABLE;"
 ]
 
