@@ -325,6 +325,12 @@ export function Scanner({
   ]);
 
   const doc = scan.document;
+  /* Hoisted out of the PageViewer props because the PANE needs it too: the
+     preview column is laid out differently for a source well than for a page
+     that has to hold 612:792 (styles/scanner.css, the min-width:1101px block).
+     The response is authoritative; before it lands the local file's own name
+     is the best evidence available. */
+  const previewKind = doc?.kind ?? (scan.file ? detectKind(scan.file) : "pdf");
 
   return (
     <div className="sx-root" data-embedded={embedded || undefined}>
@@ -380,14 +386,15 @@ export function Scanner({
       ) : (
         <div className="sx-panes">
           {/* ---- Pane 1 — the page ------------------------------------ */}
-          <section className="sx-pane" aria-label="Page preview">
+          <section
+            className="sx-pane"
+            aria-label="Page preview"
+            data-pane="preview"
+            data-kind={previewKind}
+          >
             <PageViewer
               filename={doc?.filename ?? scan.uploadName ?? "document.pdf"}
-              /* The response is authoritative. Before it lands, the local
-                 file's own name is the best evidence available — guessing
-                 wrong for one frame shows the wrong surface, so it is worth
-                 asking the file rather than defaulting to PDF. */
-              kind={doc?.kind ?? (scan.file ? detectKind(scan.file) : "pdf")}
+              kind={previewKind}
               pages={doc?.pages ?? 1}
               page={page}
               onPageChange={setPage}
@@ -401,7 +408,11 @@ export function Scanner({
 
           {/* ---- Pane 2 — findings, with the ledger above them, because
                   §6.2 wants the phases visible while they land. -------- */}
-          <section className="sx-pane" aria-label="Findings">
+          <section
+            className="sx-pane"
+            aria-label="Findings"
+            data-pane="findings"
+          >
             <PhaseLedger
               phases={scan.phases}
               totalMs={settled ? (scan.response?.totalMs ?? null) : null}

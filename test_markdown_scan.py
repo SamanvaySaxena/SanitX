@@ -49,8 +49,10 @@ def _collect(filename, data, content_type="", decision=None):
         decision="ACCEPT", confidence=0.9, reason="nothing found", evidence=[]
     )
 
-    async def fake_gemini(payload, regions, corpus, kind="pdf"):
-        fake_gemini.calls.append({"kind": kind, "payload": payload, "regions": regions})
+    async def fake_gemini(payload, regions, corpus, kind="pdf", sql_hits=None):
+        fake_gemini.calls.append(
+            {"kind": kind, "payload": payload, "regions": regions, "sql_hits": sql_hits}
+        )
         return decision
 
     fake_gemini.calls = []

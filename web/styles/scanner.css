@@ -124,6 +124,91 @@
   }
 }
 
+/* -------------------------------------------------------------------------
+   Three wells, not one long page.
+
+   `.sx-pane { overflow-y: auto }` above only means anything if the panes have
+   a height to overflow, and they did not: `.sx-root` was `min-height: 100dvh`
+   with an auto height, so a `flex: 1` pane resolved its basis against an
+   indefinite main size, grew to its content, and pushed the whole shell past
+   the viewport. The window scrolled, the panes never did, and the preview —
+   the one thing that has to stay on screen while you read what was found —
+   scrolled away with everything else.
+
+   Pinning the shell to the viewport gives the grid a definite height, which
+   is what turns the three panes into three independent scroll wells. The
+   preview then stays put by construction while the findings and the verdict
+   move under their own cursors.
+
+   Both shells get this — /scan and Act 7's embed — because the reason for it
+   is the same in both: reading a finding is worthless if you cannot see the
+   line it points at. They differ only in where the definite height comes
+   from, which is the next two rules.
+
+   Only in the three-column layout: below 1100px the panes stack, and locking
+   a preview to the top of a phone screen would spend most of it on a document
+   the reader has already looked at.
+   ------------------------------------------------------------------------- */
+@media (min-width: 1101px) {
+  .sx-route {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .sx-root:not([data-embedded="true"]) {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* Act 7's embed (§5.7) needs the same three wells, and the mechanism is the
+     same: a definite height on the root. It just cannot take the viewport to
+     get one — it sits in flow under a heading and a lede, and `100dvh` here
+     would push its own last pane below the fold on the page that introduces
+     it.
+
+     So it takes a bounded height instead. The dvh term keeps the instrument
+     proportional to the screen it is read on; the 900px ceiling stops it from
+     turning into a wall on a tall monitor; the 560px floor keeps three
+     scrollable panes worth reading on a short laptop, where the section will
+     simply be taller than the viewport, which it already is. */
+  .sx-root[data-embedded="true"] {
+    height: clamp(560px, 82dvh, 900px);
+    overflow: hidden;
+  }
+
+  /* The idle screen is short, but a 700px-tall laptop can still cut it off,
+     and neither shell scrolls any more to rescue it. Act 7 reaches this state
+     too, the moment a visitor presses New scan on the embed. */
+  .sx-empty {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* Markdown goes one step further than "the pane scrolls on its own": the
+     source well takes the pane's height and scrolls INSIDE its frame, so the
+     title, the count and the caption that says what surface this is stay
+     fixed while the lines move. A PDF page keeps its 612:792 box — squashing
+     it to fit would break the coordinate space every bbox is drawn in — so
+     that pane keeps the ordinary `overflow-y: auto` from above. */
+  .sx-pane[data-pane="preview"][data-kind="markdown"] {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sx-pane[data-pane="preview"][data-kind="markdown"] .sx-page-wrap {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .sx-pane[data-pane="preview"][data-kind="markdown"] .sx-page {
+    height: auto;
+    flex: 1;
+    min-height: 0;
+  }
+}
+
 .sx-pane-title {
   display: flex;
   align-items: baseline;
@@ -951,6 +1036,22 @@
   opacity: 1;
 }
 
+/* An absolutely positioned box still counts toward its scroll container's
+   scrollable overflow, opacity 0 or not. Anchored `left: 0`, the 240px tip on
+   the last export button started 293px into a 441px row and ran 92px past the
+   pane, which is the entire reason the verdict column had a horizontal
+   scrollbar and a band of empty space to scroll into.
+
+   Flipping the anchor to the trailing edge keeps the tip inside the pane and
+   leaves it looking identical. The first button stays left-anchored: it has
+   the whole row to its right, and overflow off the LEFT of a scroller does not
+   produce a scrollbar in the first place, so a flip there would buy nothing
+   and push the tip out over the findings column. */
+.sx-exports .sx-tip:not(:first-child)::after {
+  left: auto;
+  right: 0;
+}
+
 .sx-json {
   margin: var(--s-3) 0 0;
   padding: var(--s-3);
@@ -1238,7 +1339,14 @@
   margin-top: var(--s-3);
 }
 
-/* A definition-list value that reads as a label rather than a figure. */
-.sx-dd-left {
+/* A definition-list value that reads as a label rather than a figure.
+
+   Scoped to `.sx-components dd` on purpose, not for reach but for weight:
+   `.sx-components dd { text-align: right }` is (0,1,1) and a bare
+   `.sx-dd-left` is (0,1,0), so the unscoped version lost every cascade it
+   was in and never did anything. The symptom was a 235px void between the
+   S/D/M key and its own name — the row's slack column sat in the middle of
+   the pair it was supposed to bind together. */
+.sx-components dd.sx-dd-left {
   text-align: left;
 }
